@@ -252,40 +252,42 @@ export default function Football({ count, initialData }: FootballProps) {
             <div className="flex flex-col items-center justify-center gap-4">
               <h2 className="text-2xl font-bold text-white">Loading...</h2>
             </div>
+          ) || (
+            <div>
+              {footballCategoryData.map((category, index) => {
+                const { heading, matches } = category;
+
+                return (
+                  <div key={index}>
+                    {/* Heading (international games, world cup, euros, friendlies, club friendlies, cups) */}
+                    <h2 className="text-2xl font-bold text-white mb-3 hover:opacity-75 animate-pulse">{heading}</h2>
+
+                    {/* Matches */}
+                    <div className="grid lg:grid-cols-3 md:grid-cols-2 sm:grid-cols-1 gap-4 md:gap-8 max-w-7xl">
+                      {matches.map((match: FootballMatch, index) => {
+                        const { awayTeam, awayTeamScore, homeTeam, homeTeamScore, inProgress, time, aggScore, awayTeamLogo, homeTeamLogo, group } = match;
+                        return (
+                          <FootballMatchComp 
+                            key={index}
+                            awayTeam={awayTeam}
+                            awayTeamScore={awayTeamScore}
+                            homeTeam={homeTeam}
+                            homeTeamScore={homeTeamScore}
+                            inProgress={inProgress}
+                            time={time}
+                            aggScore={aggScore}
+                            awayTeamLogo={awayTeamLogo}
+                            homeTeamLogo={homeTeamLogo}
+                            group={group}
+                          />
+                        );
+                      })}
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
           )}
-
-          {footballCategoryData.map((category, index) => {
-            const { heading, matches } = category;
-
-            return (
-              <div key={index}>
-                {/* Heading (international games, world cup, euros, friendlies, club friendlies, cups) */}
-                <h2 className="text-2xl font-bold text-white mb-3 hover:opacity-75 animate-pulse">{heading}</h2>
-
-                {/* Matches */}
-                <div className="grid lg:grid-cols-3 md:grid-cols-2 sm:grid-cols-1 gap-4 md:gap-8 max-w-7xl">
-                  {matches.map((match: FootballMatch, index) => {
-                    const { awayTeam, awayTeamScore, homeTeam, homeTeamScore, inProgress, time, aggScore, awayTeamLogo, homeTeamLogo, group } = match;
-                    return (
-                      <FootballMatchComp 
-                        key={index}
-                        awayTeam={awayTeam}
-                        awayTeamScore={awayTeamScore}
-                        homeTeam={homeTeam}
-                        homeTeamScore={homeTeamScore}
-                        inProgress={inProgress}
-                        time={time}
-                        aggScore={aggScore}
-                        awayTeamLogo={awayTeamLogo}
-                        homeTeamLogo={homeTeamLogo}
-                        group={group}
-                      />
-                    );
-                  })}
-                </div>
-              </div>
-            );
-          })}
         </div>
       </main>
     </>
