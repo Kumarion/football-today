@@ -161,8 +161,8 @@ function processAndApplyData(data: FootballCategory[]) {
 }
 
 export const getServerSideProps = async () => {
-  const { siteToScrape, newDate } = formatBbcDate("Today");
-  const data = await scrapeBbcSports(siteToScrape, newDate);
+  const { siteToScrape } = formatBbcDate("Today");
+  const data = await scrapeBbcSports(siteToScrape);
 
   if (!data) {
     return {

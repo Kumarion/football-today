@@ -21,39 +21,6 @@ model Example {
     updatedAt DateTime @updatedAt
 }
 
-model FixtureCategory {
-    id        String   @id @default(cuid())
-    createdAt DateTime @default(now())
-    updatedAt DateTime @updatedAt
-    name      String   @unique // aka heading
-
-    fixtures  Fixture[]
-    @@index([name], name: "name")
-}
-
-model Fixture {
-    id         String   @id @default(cuid())
-    createdAt  DateTime @default(now())
-    updatedAt  DateTime @updatedAt
-    completeFixtureId String @unique
-    homeTeam   String
-    awayTeam   String
-    homeScore  String
-    awayScore  String
-    time       String
-    inProgress Boolean
-    aggScore   String
-    cancelled  Boolean?
-    group      String?
-
-    date       String
-
-    categoryId String
-    category   FixtureCategory @relation(fields: [categoryId], references: [id])
-
-    @@index([completeFixtureId], name: "completeFixtureId")
-}
-
 model FootballMatchDay {
     id        String   @id @default(cuid())
     createdAt DateTime @default(now())
