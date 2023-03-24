@@ -156,7 +156,7 @@ function migratePreviousDataToDatabase() {
 }
 
 // every 20 seconds
-setInterval(migratePreviousDataToDatabase, 600000);
+setInterval(migratePreviousDataToDatabase, 60000);
 
 export default async function scrapeBbcSports(link: string) {
   const categories = await scrapeBbcWithCompleteLink(link);
