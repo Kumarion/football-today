@@ -155,12 +155,9 @@ function migratePreviousDataToDatabase() {
   });
 }
 
-setInterval(() => {
-  console.log("test interval");
-}, 10000);
 
-// every 20 seconds
-setInterval(migratePreviousDataToDatabase, 60000);
+// every 8 minutes
+setInterval(migratePreviousDataToDatabase, 1000 * 60 * 8);
 
 export default async function scrapeBbcSports(link: string) {
   const categories = await scrapeBbcWithCompleteLink(link);
