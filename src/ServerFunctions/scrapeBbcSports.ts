@@ -1,14 +1,34 @@
 import fetch from "node-fetch";
 import { load } from "cheerio";
+import { prisma } from "~/server/db";
 
-export default async function scrapeBbcSports(link: string) {
+// We can make a request to update the database, we don't want to do this too often though, probably every hour or so
+async function databaseUpdate(categories: {heading: string; matches: {homeTeam: string; awayTeam: string; homeTeamScore: string; awayTeamScore: string; time: string; inProgress: boolean; aggScore?: string | null; cancelled?: boolean; group?: string;}[]}[], date: string) {
+  // create a new category in the db with the heading and the matches
+  // create a json that we can set 
+  await prisma.footballMatchDay.upsert({
+    where: {
+      date: date,
+    },
+    // update it with the new fixture data
+    update: {
+      fixtureData: JSON.stringify(categories),
+    },
+    // create it if it doesn't exist with the stringified fixture data
+    create: {
+      date: date,
+      fixtureData: JSON.stringify(categories),
+    },
+  });
+}
+
+function scrapeBbcWithCompleteLink(link: string) {
   return fetch(link)
     .then((res) => res.text())
     .then((body) => {
       const $ = load(body);
       const categories = [] as {
         heading: string;
-        groupStages?: string[];
         matches: {
           homeTeam: string;
           awayTeam: string;
@@ -57,7 +77,7 @@ export default async function scrapeBbcSports(link: string) {
                 if (fixtureStatus == "FT") time = "FT";
                 if (fixtureStatus == "HT") time = "HT";
                 if (fixtureStatus == "Postponed") time = "Postponed";
-                if (/\d/.test(fixtureStatus)) time = fixtureStatus.replace(" mins", "'") || fixtureStatus.replace(" min", "'");
+                if (/\d/.test(fixtureStatus)) time = fixtureStatus.replace(" mins", "'"); fixtureStatus.replace(" min", "'");
                 if (fixtureStatus.includes("cancelled")) time = fixtureStatus;
                 if (fixtureStatus.includes("postponed")) time = fixtureStatus;
               }
@@ -107,4 +127,65 @@ export default async function scrapeBbcSports(link: string) {
 
       return categories;
     });
+}
+
+function migratePreviousDataToDatabase() {
+  console.log("Upserting database with previous data...");
+
+  // date in format YYYY-MM-DD
+  const maxDays = 14;
+  
+  // get previous like 2 days to keep in our big database (make sure to include today)
+  const previousDates = Array.from({ length: maxDays }, (_, i) => {
+    const date = new Date();
+    date.setDate(date.getDate() - i);
+    return date.toISOString().split("T")[0] as string;
+  });
+
+  const dates = [...previousDates];
+
+  dates.forEach((date) => {
+    scrapeBbcWithCompleteLink(
+      `https://www.bbc.co.uk/sport/football/scores-fixtures/${date}`
+    ).then((categories) => {
+      // update the pool
+      const update = databaseUpdate(categories, date);
+      update.then(() => console.log("Database updated for date " + date)).catch(console.error);
+    }).catch(console.error);
+  });
+}
+
+// every 20 seconds
+setInterval(migratePreviousDataToDatabase, 600000);
+
+export default async function scrapeBbcSports(link: string) {
+  const categories = await scrapeBbcWithCompleteLink(link);
+  console.log("Scraped BBC Sports for fixtures");
+
+  // get test data for date 2023-03-22
+  // const test = await prisma.footballMatchDay.findUnique({
+  //   where: {
+  //     date: "2023-03-22",
+  //   },
+  // });
+
+  // if (test && test.fixtureData) {
+  //   const testCategories = JSON.parse(test.fixtureData as string) as {
+  //     heading: string;
+  //     matches: {
+  //       homeTeam: string;
+  //       awayTeam: string;
+  //       homeTeamScore: string;
+  //       awayTeamScore: string;
+  //       time: string;
+  //       inProgress: boolean;
+  //       aggScore?: string | null;
+  //       cancelled?: boolean;
+  //       group?: string;
+  //     }[];
+  //   }[];
+  //   console.log(testCategories);
+  // }
+
+  return categories;
 }

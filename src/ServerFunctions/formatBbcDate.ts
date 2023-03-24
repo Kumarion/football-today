@@ -22,5 +22,8 @@ export default function formatBbcDate(currentTab: string) {
   const newDate = `${year}-${newMonth}-${newDay}`;
   const siteToScrape = `https://www.bbc.com/sport/football/scores-fixtures/${newDate}`;
 
-  return siteToScrape;
+  return {
+    siteToScrape,
+    newDate,
+  };
 }

@@ -4,7 +4,8 @@ export default function useGetAllFootballMatches({ currentTab }: { currentTab: s
   const { isLoading, data, refetch } = api.football.getCurrentFootballMatches.useQuery({ currentTab }, {
     // refetch every 10 seconds
     // not sure how efficient this is, but it's a start
-    refetchInterval: 10000
+    refetchInterval: 5000,
+    refetchOnWindowFocus: true,
   });
 
   return {
