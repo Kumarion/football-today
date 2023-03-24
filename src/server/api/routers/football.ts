@@ -13,7 +13,7 @@ export const footballRouter = createTRPCRouter({
     .query(async ({ input }) => {
       const { currentTab } = input;
       // get all football matches going on in the world
-      const { siteToScrape, newDate } = formatBbcDate(currentTab);
-      return await scrapeBbcSports(siteToScrape, newDate);
+      const { siteToScrape } = formatBbcDate(currentTab);
+      return await scrapeBbcSports(siteToScrape);
     }),
 });
