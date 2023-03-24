@@ -57,7 +57,7 @@ export default async function scrapeBbcSports(link: string) {
                 if (fixtureStatus == "FT") time = "FT";
                 if (fixtureStatus == "HT") time = "HT";
                 if (fixtureStatus == "Postponed") time = "Postponed";
-                if (/\d/.test(fixtureStatus)) time = fixtureStatus.replace(" mins", "'");
+                if (/\d/.test(fixtureStatus)) time = fixtureStatus.replace(" mins", "'") || fixtureStatus.replace(" min", "'");
                 if (fixtureStatus.includes("cancelled")) time = fixtureStatus;
                 if (fixtureStatus.includes("postponed")) time = fixtureStatus;
               }

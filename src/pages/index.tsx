@@ -3,10 +3,13 @@ import useGetAllFootballMatches from "~/hooks/useGetAllFootballMatches";
 import { useEffect, useState } from "react";
 import { format } from "date-fns";
 
-import Image from "next/image";
 import formatBbcDate from "~/ServerFunctions/formatBbcDate";
 import scrapeBbcSports from "~/ServerFunctions/scrapeBbcSports";
+import FootballMatchComp from "~/components/footballMatch";
+
 import type { RouterOutputs } from "~/utils/api";
+import DateTab from "~/components/dateTab";
+import { categoriesToComeFirst } from "~/helpers/footballCategoriesAlgorithm";
 type FootballMatch = RouterOutputs["football"]["getCurrentFootballMatches"][0]["matches"][0] & {
   homeTeamLogo?: string;
   awayTeamLogo?: string;
@@ -20,37 +23,14 @@ type FootballLogoSearchResponse = {
   }[];
 };
 
+interface FootballProps {
+  count: number;
+  initialData: FootballCategory[];
+}
+
 // categories that come first
 // if not in this list, they will be sorted alphabetically
 // an algorithm will sort the categories by what is most popular, as listed here
-const categoriesToComeFirst = [
-  "World Cup",
-  "World Cup Qualifying",
-  "Premier League",
-  "Champions League",
-  "UEFA Nations League",
-  "European Championship",
-  "European Championship Qualifying",
-  "International Friendlies",
-  "Europa League",
-  "FA Cup",
-  "EFL Cup",
-  "Spanish Copa del Rey",
-  "Conference League",
-  "La Liga",
-  "Spanish La Liga",
-  "Ligue 1",
-  "French Coupe de France",
-  "French Ligue 1",
-  "Italian Serie A",
-  "German Bundesliga",
-  "Danish Superliga",
-  "League One",
-  "League Two",
-  "Championship",
-  "Scottish Premiership",
-  "Scottish Championship",
-];
 
 function sortCategories(a: FootballCategory, b: FootballCategory) {
   const aIndex = categoriesToComeFirst.indexOf(a.heading);
@@ -93,28 +73,6 @@ function sortByInProgress(a: FootballMatch, b: FootballMatch) {
   return 0;
 }
 
-function getActualTime(team: string, time: string) {
-  if (time == "") {
-    return time;
-  }
-
-  const timeSplit = time.split(":") as [string, string];
-  const hours = timeSplit[0];
-  const minutes = timeSplit[1];
-
-  if (!hours || !minutes) {
-    return time;
-  }
-
-  const currentDate = new Date();
-
-  // convert the hours and minutes to a utc date
-  currentDate.setUTCHours(parseInt(hours));
-  currentDate.setMinutes(parseInt(minutes));
-
-  return format(currentDate, "hh:mm a");
-}
-
 function formulateTabs() {
   // create tabs including TODAYs date and up to 7 days
   const tabs = [];
@@ -144,35 +102,62 @@ function formulateTabs() {
 }
 
 async function searchLogo(teamName: string): Promise<string> {
-  const footballLogoSearch = await fetch("https://search-api.onefootball.com/v2/en/search?q=" + encodeURIComponent(teamName), {
-    // "headers": {
-    //   "accept": "application/json, text/plain, */*",
-    //   "accept-language": "en-US,en;q=0.9",
-    //   "sec-ch-ua": "\" Not A;Brand\";v=\"99\", \"Chromium\";v=\"90\", \"Google Chrome\";v=\"90\"",
-    //   "sec-ch-ua-mobile": "?0",
-    //   "sec-fetch-dest": "empty",
-    //   "sec-fetch-mode": "cors",
-    //   "sec-fetch-site": "cross-site"
-    // },
-    // "referrer": "https://www.onefootball.com/en/",
-    // "referrerPolicy": "strict-origin-when-cross-origin",
-    // "body": null,
-    // "method": "GET",
-    // "mode": "cors",
-    // "credentials": "omit"
-  });
+  // check cache
+  const cached = localStorage.getItem(teamName);
+  if (cached) {
+    return cached;
+  }
 
+  const footballLogoSearch = await fetch("https://search-api.onefootball.com/v2/en/search?q=" + encodeURIComponent(teamName));
   const data = await footballLogoSearch.json() as FootballLogoSearchResponse;
   const teams = data?.teams || [] as FootballLogoSearchResponse['teams'];
   const first = teams[0] || {} as typeof teams[number];
   const images = first?.images || [] as typeof first['images'];
   const firstImage = images[0] || {} as typeof images[number];
 
-  if (!firstImage) {
+  if (!firstImage || firstImage.url == "" || firstImage.url === undefined) {
     return "/emptyfc.png";
   }
 
+  // set in cache
+  localStorage.setItem(teamName, firstImage.url);
+
   return firstImage.url;
+}
+
+function processAndApplyData(data: FootballCategory[]) {
+  const sortedCategories = data.sort(sortCategories);
+
+  // work with each category
+  const newSortedData = sortedCategories.map((category) => {
+    // sort the matches
+    const sortedMatches = category.matches.sort(sortByInProgress);
+    
+    return {
+      ...category,
+      matches: sortedMatches,
+    };
+  });
+
+  const appendImagesToFinalSortedData = newSortedData.map(async (category) => {
+    const newMatches = await Promise.all(category.matches.map(async (match: FootballMatch) => {
+      const homeTeamLogo = await searchLogo(match.homeTeam);
+      const awayTeamLogo = await searchLogo(match.awayTeam);
+
+      return {
+        ...match,
+        homeTeamLogo,
+        awayTeamLogo,
+      };
+    }));
+
+    return {
+      ...category,
+      matches: newMatches,
+    };
+  });
+  
+  return Promise.all(appendImagesToFinalSortedData);
 }
 
 export const getServerSideProps = async () => {
@@ -192,55 +177,33 @@ export const getServerSideProps = async () => {
   return {
     props: {
       count,
+      initialData: data,
     },
   };
 };
 
-export default function Football({ count }: { count: number }) {
-  const [footballCategories, setFootballCategories] = useState<FootballCategory[]>([]);
+export default function Football({ count, initialData }: FootballProps) {
   const [currentTab, setCurrentTab] = useState("Today");
-  const { data, isLoading, refetch } = useGetAllFootballMatches({currentTab});
 
+  // set football categories for the current tab
+  const [footballCategoryData, setFootballCategoryData] = useState<FootballCategory[]>(initialData);
+
+  // get all football matches
+  const { isLoading, data, refetch } = useGetAllFootballMatches({currentTab});
+
+  // useEffect for further tab data
   useEffect(() => {
     if (data) {
-      const sortedCategories = data.sort(sortCategories);
-
-      // work with each category
-      const newSortedData = sortedCategories.map((category) => {
-        // sort the matches
-        const sortedMatches = category.matches.sort(sortByInProgress);
-        
-        return {
-          ...category,
-          matches: sortedMatches,
-        };
+      void processAndApplyData(data).then((processedData) => {
+        setFootballCategoryData(processedData);
       });
-
-      const newSortedDataWithImages = newSortedData.map(async (category) => {
-        const newMatches = await Promise.all(category.matches.map(async (match: FootballMatch) => {
-          const homeTeamLogo = await searchLogo(match.homeTeam);
-          const awayTeamLogo = await searchLogo(match.awayTeam);
-
-          return {
-            ...match,
-            homeTeamLogo,
-            awayTeamLogo,
-            homeTeamActualTime: getActualTime(match.homeTeam, match.homeTeam),
-            awayTeamActualTime: getActualTime(match.awayTeam, match.awayTeam),
-          };
-        }));
-
-        return {
-          ...category,
-          matches: newMatches,
-        };
-      });
-
-      Promise.all(newSortedDataWithImages).then((data) => {
-        setFootballCategories(data);
-      }).catch(console.error);
     }
   }, [data]);
+
+  const setTab = (tab: string) => {
+    void refetch();
+    setCurrentTab(tab);
+  };
 
   return (
     <>
@@ -273,20 +236,13 @@ export default function Football({ count }: { count: number }) {
 
             <div className="tabs max-w-7xl justify-center tabs-boxed bg-transparent">
               {formulateTabs().map((tab, index) => {
-                const defaultStyling = " tab tab-md ";
-
                 return (
-                  <a 
+                  <DateTab 
                     key={index}
-                    className={defaultStyling + (currentTab == tab ? "tab-active" : defaultStyling)}
-                    onClick={() => {
-                      setCurrentTab(tab);
-                      void refetch();
-                    }}
-                  >
-                    {/* If date is tomorrow, say Tomorrow, or Today, say */}
-                    {tab == new Date(new Date().setDate(new Date().getDate() + 1)).toDateString() ? "Tomorrow" : tab}
-                  </a> 
+                    tab={tab}
+                    currentTab={currentTab}
+                    setCurrentTab={setTab}
+                  />
                 );
               })}
             </div>
@@ -298,8 +254,9 @@ export default function Football({ count }: { count: number }) {
             </div>
           )}
 
-          {footballCategories.map((category, index) => {
+          {footballCategoryData.map((category, index) => {
             const { heading, matches } = category;
+
             return (
               <div key={index}>
                 {/* Heading (international games, world cup, euros, friendlies, club friendlies, cups) */}
@@ -310,102 +267,19 @@ export default function Football({ count }: { count: number }) {
                   {matches.map((match: FootballMatch, index) => {
                     const { awayTeam, awayTeamScore, homeTeam, homeTeamScore, inProgress, time, aggScore, awayTeamLogo, homeTeamLogo, group } = match;
                     return (
-                      <div
-                        key = {index} // index for now until we get ids
-                        className="flex max-w-xs flex-col gap-4 rounded-xl bg-white/10 p-4 text-white hover:bg-white/20"
-                      >
-                        <div className="flex-row gap-3">
-                          {homeTeamScore == "" && awayTeamScore == "" && (
-                            <h1 className="text-blue-400 text-xl text-center mb-4">
-                              Not started
-                            </h1>
-                          )}
-
-                          {/* Country v Country with flag */}
-                          <div className="flex flex-row gap-4 items-center justify-between w-full">
-                            <div className="flex flex-col items-center w-28 h-20 hover:scale-110 transform transition duration-150 ease-in-out">
-                              <Image
-                                src={homeTeamLogo == "" ? "/emptyfc.png" : homeTeamLogo || "/emptyfc.png"}
-                                width={70}
-                                height={70}
-                                quality={100}
-                                alt=""
-                              />
-
-                              <h1 className="text-center">
-                                {homeTeam}
-                              </h1>
-                            </div>
-                            
-                            <div className="flex flex-row items-center gap-5 mb-2">
-                              <div>
-                                <span className="text-3xl font-bold">
-                                  {homeTeamScore}
-                                </span>
-                              </div>
-
-                              <div>
-                                <span className="text-2xl font-mono">
-                                  -
-                                </span>
-                              </div>
-
-                              <div>
-                                <span className="text-3xl font-bold">
-                                  {awayTeamScore}
-                                </span>
-                              </div>
-                            </div>
-                            
-                            <div className="flex flex-col items-center w-28 h-20 hover:scale-110 transform transition duration-150 ease-in-out">
-                              <Image
-                                src={awayTeamLogo == "" ? "/emptyfc.png" : awayTeamLogo || "/emptyfc.png"}
-                                width={70}
-                                height={70}
-                                quality={100}
-                                alt=""
-                              />
-
-                              <h1 className="text-center">
-                                {awayTeam}
-                              </h1>
-                            </div>
-                          </div>
-                          
-                        </div>
-                        
-                        <div className="grid justify-center mt-9 gap-1 w-full">
-                          {group && (
-                            <span className="text-[#f5a623] text-lg text-center w-full">
-                              {group}
-                            </span>
-                          )}
-
-                          {inProgress && (
-                            <span className="text-[#f5a623] text-lg text-center w-full">
-                              In progress
-                            </span>
-                          )}
-                          
-                          <span className="flex flex-col text-2xl w-full text-center">
-                            {aggScore && (
-                              <span className="text-[#f5a623] text-lg text-center w-full">
-                                {aggScore}
-                              </span>
-                            )}
-
-                            {homeTeamScore == "" && awayTeamScore == "" && (
-                              <span className="text-2xl">
-                                {getActualTime(homeTeam, time)}
-                              </span>
-                            ) || (
-                              <span className="text-3xl text-center w-full font-mono">
-                                {time}
-                              </span>
-                            )}
-                          </span>
-                        </div>
-                      </div>
+                      <FootballMatchComp 
+                        key={index}
+                        awayTeam={awayTeam}
+                        awayTeamScore={awayTeamScore}
+                        homeTeam={homeTeam}
+                        homeTeamScore={homeTeamScore}
+                        inProgress={inProgress}
+                        time={time}
+                        aggScore={aggScore}
+                        awayTeamLogo={awayTeamLogo}
+                        homeTeamLogo={homeTeamLogo}
+                        group={group}
+                      />
                     );
                   })}
                 </div>
