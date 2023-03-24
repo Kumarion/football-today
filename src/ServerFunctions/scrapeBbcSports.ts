@@ -155,6 +155,10 @@ function migratePreviousDataToDatabase() {
   });
 }
 
+setInterval(() => {
+  console.log("test interval");
+}, 10000);
+
 // every 20 seconds
 setInterval(migratePreviousDataToDatabase, 60000);
 
