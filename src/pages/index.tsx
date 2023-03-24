@@ -251,6 +251,10 @@ export default function Football({ count }: { count: number }) {
           name="description" 
           content="Displaying live football scores for football leagues around the world" 
         />
+        <meta
+          name="og:title"
+          content={`🔴 Football Today - ${count} matches`}
+        />
         <link 
           rel="icon" 
           href="/favicon.ico" 
