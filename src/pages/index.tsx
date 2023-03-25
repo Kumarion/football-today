@@ -159,8 +159,7 @@ function processAndApplyData(data: FootballCategory[]) {
 }
 
 export const getServerSideProps = async () => {
-  const date = new Date();
-  const niceDate = `${date.getFullYear()}-${date.getMonth() + 1}-${date.getDate()}`;
+  const niceDate = formulateTime("Today");
   const siteToScrape = `https://www.bbc.com/sport/football/scores-fixtures/${niceDate}`;
   const data = await scrapeBbcSports(siteToScrape);
 
