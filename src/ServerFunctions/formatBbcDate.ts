@@ -2,7 +2,8 @@ export default function formatBbcDate(currentTab: string) {
   let formattedTab = "";
 
   if (currentTab === "Today") {
-    formattedTab = new Date().toISOString();
+    formattedTab = new Date().toISOString().split("T")[0] as string;
+    // we need to make this work for production, dont use 
   } else {
     formattedTab = currentTab;
   }
