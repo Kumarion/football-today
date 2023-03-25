@@ -1,15 +1,13 @@
 export default function formatBbcDate(currentTab: string) {
-  let formattedTab = "";
+  let date = null;
 
   if (currentTab === "Today") {
-    formattedTab = new Date().toISOString().split("T")[0] as string;
-    // we need to make this work for production, dont use 
+    date = new Date();
   } else {
-    formattedTab = currentTab;
+    date = new Date(currentTab);
   }
 
   // convert date to simple XXXX-XX-XX format
-  const date = new Date(formattedTab);
 
   const year = date.getFullYear();
   const month = date.getMonth() + 1;
