@@ -6,7 +6,7 @@ export default function formatBbcDate(currentTab: string) {
 
   const year = date.getFullYear();
   const month = date.getMonth() + 1;
-  const day = date.getDate();
+  const day = date.getDate() - 1;
 
   let newMonth = month.toString();
   let newDay = day.toString();
@@ -20,6 +20,7 @@ export default function formatBbcDate(currentTab: string) {
   }
 
   const newDate = `${year}-${newMonth}-${newDay}`;
+  console.log(newDate);
   const siteToScrape = `https://www.bbc.com/sport/football/scores-fixtures/${newDate}`;
 
   return {
