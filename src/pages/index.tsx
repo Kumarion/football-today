@@ -3,7 +3,7 @@ import useGetAllFootballMatches from "~/hooks/useGetAllFootballMatches";
 import { useEffect, useState } from "react";
 import { format } from "date-fns";
 
-import scrapeBbcSports from "~/ServerFunctions/scrapeBbcSports";
+import { scrapeBbcSports, getPoolForToday } from "~/ServerFunctions/scrapeBbcSports";
 import FootballMatchComp from "~/components/footballMatch";
 
 import type { RouterOutputs } from "~/utils/api";
@@ -23,7 +23,7 @@ type FootballLogoSearchResponse = {
 };
 interface FootballProps {
   count: number;
-  initialData: FootballCategory[];
+  todaysData: FootballCategory[];
 }
 
 // categories that come first
@@ -158,10 +158,11 @@ function processAndApplyData(data: FootballCategory[]) {
   return Promise.all(appendImagesToFinalSortedData);
 }
 
-export const getServerSideProps = async () => {
-  const niceDate = formulateTime("Today");
-  const siteToScrape = `https://www.bbc.com/sport/football/scores-fixtures/${niceDate}`;
-  const data = await scrapeBbcSports(siteToScrape);
+export const getServerSideProps = () => {
+  // const niceDate = formulateTime("Today");
+  // const siteToScrape = `https://www.bbc.com/sport/football/scores-fixtures/${niceDate}`;
+  // const data = await scrapeBbcSports(siteToScrape);
+  const data = getPoolForToday();
 
   if (!data) {
     return {
@@ -176,7 +177,7 @@ export const getServerSideProps = async () => {
   return {
     props: {
       count,
-      initialData: data,
+      todaysData: data,
     },
   };
 };
@@ -211,15 +212,18 @@ function formulateTime(currentTab: string) {
   return newDate;
 }
 
-export default function Football({ count, initialData }: FootballProps) {
+export default function Football({ count, todaysData }: FootballProps) {
   const [currentTab, setCurrentTab] = useState("Today");
   // const [search, setSearch] = useState("");
 
   // set football categories for the current tab
-  const [footballCategoryData, setFootballCategoryData] = useState<FootballCategory[]>(initialData);
+  const [footballCategoryData, setFootballCategoryData] = useState<FootballCategory[]>(todaysData);
 
   // get all football matches
-  const { isLoading, data, refetch } = useGetAllFootballMatches({currentTab: formulateTime(currentTab)});
+  const { isLoading, data, refetch } = useGetAllFootballMatches({
+    currentTab: formulateTime(currentTab),
+    enabled: true,
+  });
 
   // useEffect for further tab data
   useEffect(() => {

@@ -4,7 +4,7 @@ import {
 } from "~/server/api/trpc";
 
 import { z } from "zod";
-import scrapeBbcSports from "~/ServerFunctions/scrapeBbcSports";
+import { scrapeBbcSports } from "~/ServerFunctions/scrapeBbcSports";
 
 export const footballRouter = createTRPCRouter({
   getCurrentFootballMatches: publicProcedure

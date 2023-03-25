@@ -1,6 +1,72 @@
 import fetch from "node-fetch";
 import { load } from "cheerio";
 import { prisma } from "~/server/db";
+import { categoriesToComeFirst } from "~/helpers/footballCategoriesAlgorithm";
+import type { RouterOutputs } from "~/utils/api";
+
+type poolType = {
+  heading: string;
+  matches: {
+    homeTeam: string;
+    awayTeam: string;
+    homeTeamScore: string;
+    awayTeamScore: string;
+    time: string;
+    inProgress: boolean;
+    aggScore?: string | null;
+    cancelled?: boolean;
+    group?: string;
+    finalWinMessage?: string | null;
+  }[];
+};
+type FootballMatch = RouterOutputs["football"]["getCurrentFootballMatches"][0]["matches"][0] & {
+  homeTeamLogo?: string;
+  awayTeamLogo?: string;
+};
+type FootballCategory = RouterOutputs["football"]["getCurrentFootballMatches"][0];
+
+let pool = [] as poolType[];
+
+function sortCategories(a: FootballCategory, b: FootballCategory) {
+  const aIndex = categoriesToComeFirst.indexOf(a.heading);
+  const bIndex = categoriesToComeFirst.indexOf(b.heading);
+
+  if (aIndex == -1 && bIndex == -1) {
+    return a.heading.localeCompare(b.heading);
+  }
+
+  if (aIndex == -1) {
+    return 1;
+  }
+
+  if (bIndex == -1) {
+    return -1;
+  }
+
+  return aIndex - bIndex;
+}
+
+function sortByInProgress(a: FootballMatch, b: FootballMatch) {
+  // Needs to be sorted like so
+  // 1. In progress
+  // 2. Finished
+  // 3. Not started
+
+  const aInProgress = a.inProgress;
+  const bInProgress = b.inProgress;
+  const aFinished = a.homeTeamScore != "" && a.awayTeamScore != "";
+  const bFinished = b.homeTeamScore != "" && b.awayTeamScore != "";
+  const aNotStarted = a.homeTeamScore == "" && a.awayTeamScore == "";
+  const bNotStarted = b.homeTeamScore == "" && b.awayTeamScore == "";
+
+  return (
+    (aInProgress ? 0 : 1) - (bInProgress ? 0 : 1) ||
+    (aFinished ? 0 : 1) - (bFinished ? 0 : 1) ||
+    (aNotStarted ? 0 : 1) - (bNotStarted ? 0 : 1)
+  );
+
+  return 0;
+}
 
 // We can make a request to update the database, we don't want to do this too often though, probably every hour or so
 async function databaseUpdate(categories: {heading: string; matches: {homeTeam: string; awayTeam: string; homeTeamScore: string; awayTeamScore: string; time: string; inProgress: boolean; aggScore?: string | null; cancelled?: boolean; group?: string; finalWinMessage?: string | null}[]}[], date: string) {
@@ -134,6 +200,44 @@ function scrapeBbcWithCompleteLink(link: string) {
     });
 }
 
+// every 3 minutes to update the pool for today
+function startPoolInterval() {
+  const todaysDate = new Date().toISOString().split("T")[0] as string;
+
+  setInterval(() => {
+    console.log("Updating the pool for today...");
+
+    scrapeBbcWithCompleteLink(
+      `https://www.bbc.co.uk/sport/football/scores-fixtures/${todaysDate}`
+    ).then((categories) => {
+      // const matchesForToday = categories[0]?.matches || [];
+
+      // clear the pool
+      pool = [];
+
+      // update the pool
+      categories.map((category) => {
+        pool.push({
+          heading: category.heading,
+          matches: category.matches,
+        });
+      });
+
+
+      // logging
+      // console.log(pool);
+      // pool.map((category) => {
+      //   console.log(category.heading);
+      //   category.matches.map((match) => {
+      //     console.log(match);
+      //   });
+      // });
+    }).catch(console.error);
+  }, 180000);
+}
+
+startPoolInterval();
+
 // every 8 minutes
 function startInterval() {
   setInterval(() => {
@@ -165,7 +269,24 @@ function startInterval() {
 
 startInterval();
 
-export default async function scrapeBbcSports(link: string) {
+const getPoolForToday = () => {
+  const sortedCategories = pool.sort(sortCategories);
+
+  // work with each category
+  const newSortedData = sortedCategories.map((category) => {
+    // sort the matches
+    const sortedMatches = category.matches.sort(sortByInProgress);
+    
+    return {
+      ...category,
+      matches: sortedMatches,
+    };
+  });
+  
+  return newSortedData;
+};
+
+const scrapeBbcSports = async (link: string) => {
   const categories = await scrapeBbcWithCompleteLink(link);
   console.log("Scraped BBC Sports for fixtures");
 
@@ -195,4 +316,6 @@ export default async function scrapeBbcSports(link: string) {
   // }
 
   return categories;
-}
+};
+
+export { scrapeBbcSports, getPoolForToday };
