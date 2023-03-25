@@ -25,6 +25,7 @@ type FootballMatch = RouterOutputs["football"]["getCurrentFootballMatches"][0]["
 };
 type FootballCategory = RouterOutputs["football"]["getCurrentFootballMatches"][0];
 
+let serverStart = false;
 let pool = [] as poolType[];
 
 function sortCategories(a: FootballCategory, b: FootballCategory) {
@@ -289,6 +290,13 @@ const getPoolForToday = () => {
 const scrapeBbcSports = async (link: string) => {
   const categories = await scrapeBbcWithCompleteLink(link);
   console.log("Scraped BBC Sports for fixtures");
+
+  if (!serverStart) {
+    // start our intervals if it's the first time we're scraping
+    startPoolInterval();
+    startInterval();
+    serverStart = true;
+  }
 
   // get test data for date 2023-03-22
   // const test = await prisma.footballMatchDay.findUnique({
