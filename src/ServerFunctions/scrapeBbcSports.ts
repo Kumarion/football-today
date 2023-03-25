@@ -68,6 +68,7 @@ function scrapeBbcWithCompleteLink(link: string) {
             fixture.each((i, fixtureData) => {
               const home = $(fixtureData).find(".sp-c-fixture__wrapper").find("abbr").first().text();
               const away = $(fixtureData).find(".sp-c-fixture__wrapper").find("abbr").last().text();
+
               const fixtureStatus = $(fixtureData).find(".sp-c-fixture__status").text();
               let time = $(fixtureData).find(".sp-c-fixture__number--time").text();
               let aggScore = "";
@@ -129,35 +130,41 @@ function scrapeBbcWithCompleteLink(link: string) {
     });
 }
 
-function migratePreviousDataToDatabase() {
-  console.log("Upserting database with previous data...");
-
-  // date in format YYYY-MM-DD
-  const maxDays = 14;
+// function migratePreviousDataToDatabase() {
   
-  // get previous like 2 days to keep in our big database (make sure to include today)
-  const previousDates = Array.from({ length: maxDays }, (_, i) => {
-    const date = new Date();
-    date.setDate(date.getDate() - i);
-    return date.toISOString().split("T")[0] as string;
-  });
-
-  const dates = [...previousDates];
-
-  dates.forEach((date) => {
-    scrapeBbcWithCompleteLink(
-      `https://www.bbc.co.uk/sport/football/scores-fixtures/${date}`
-    ).then((categories) => {
-      // update the pool
-      const update = databaseUpdate(categories, date);
-      update.then(() => console.log("Database updated for date " + date)).catch(console.error);
-    }).catch(console.error);
-  });
-}
+// }
 
 
 // every 8 minutes
-setInterval(migratePreviousDataToDatabase, 1000 * 60 * 8);
+function startInterval() {
+  setInterval(() => {
+    console.log("Upserting database with previous data...");
+  
+    // date in format YYYY-MM-DD
+    const maxDays = 14;
+    
+    // get previous like 2 days to keep in our big database (make sure to include today)
+    const previousDates = Array.from({ length: maxDays }, (_, i) => {
+      const date = new Date();
+      date.setDate(date.getDate() - i);
+      return date.toISOString().split("T")[0] as string;
+    });
+  
+    const dates = [...previousDates];
+  
+    dates.forEach((date) => {
+      scrapeBbcWithCompleteLink(
+        `https://www.bbc.co.uk/sport/football/scores-fixtures/${date}`
+      ).then((categories) => {
+        // update the pool
+        const update = databaseUpdate(categories, date);
+        update.then(() => console.log("Database updated for date " + date)).catch(console.error);
+      }).catch(console.error);
+    });
+  }, 1000 * 60 * 8);
+}
+
+startInterval();
 
 export default async function scrapeBbcSports(link: string) {
   const categories = await scrapeBbcWithCompleteLink(link);

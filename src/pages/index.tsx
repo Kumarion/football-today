@@ -184,6 +184,7 @@ export const getServerSideProps = async () => {
 
 export default function Football({ count, initialData }: FootballProps) {
   const [currentTab, setCurrentTab] = useState("Today");
+  const [search, setSearch] = useState("");
 
   // set football categories for the current tab
   const [footballCategoryData, setFootballCategoryData] = useState<FootballCategory[]>(initialData);
@@ -210,13 +211,17 @@ export default function Football({ count, initialData }: FootballProps) {
       <Head>
         {/* Calculate how many matches are in all categories */}
         <title>🔴 Football Today - {count} matches</title>
-        <meta 
-          name="description" 
-          content="Displaying live football scores for football leagues around the world" 
-        />
         <meta
           name="og:title"
           content={`🔴 Football Today - ${count} matches`}
+        />
+        <meta
+          name="description"
+          content={`Displaying live football scores!
+          There are ${count} football matches on today!
+
+          Football Today is a website that displays live football scores for all the major leagues.
+          `}
         />
         <link 
           rel="icon" 
@@ -224,7 +229,7 @@ export default function Football({ count, initialData }: FootballProps) {
         />
       </Head>
       <main className="flex min-h-screen flex-col items-center justify-center bg-gradient-to-b from-[#2e026d] to-[#15162c]">
-        <div className="container flex flex-col items-center justify-center gap-12 px-4 py-7 ">
+        <div className="container flex flex-col items-center justify-center gap-3 px-4 py-7 ">
           <div className="flex flex-col items-center">
             <h1 className="animate-pulse text-5xl font-extrabold tracking-tight text-white sm:text-[5rem] text-center">
               Football Today
@@ -248,6 +253,16 @@ export default function Football({ count, initialData }: FootballProps) {
             </div>
           </div>
 
+          {/* Search bar */}
+          {/* <div className="w-full flex flex-col items-center justify-center gap-4">
+            <input
+              type="text"
+              className="w-full max-w-[400px] px-4 py-2 rounded-md bg-gray-800 text-white outline-none"
+              placeholder="Search for a team"
+              onChange={(e) => setSearch(e.target.value)}
+            />
+          </div> */}
+
           {isLoading && (
             <div className="flex flex-col items-center justify-center gap-4">
               <h2 className="text-2xl font-bold text-white">Loading...</h2>
@@ -260,7 +275,7 @@ export default function Football({ count, initialData }: FootballProps) {
                 return (
                   <div key={index}>
                     {/* Heading (international games, world cup, euros, friendlies, club friendlies, cups) */}
-                    <h2 className="text-2xl font-bold text-white mb-3 hover:opacity-75 animate-pulse">{heading}</h2>
+                    <h2 className="text-2xl font-bold text-white mb-3 mt-7 hover:opacity-75 animate-pulse">{heading}</h2>
 
                     {/* Matches */}
                     <div className="grid lg:grid-cols-3 md:grid-cols-2 sm:grid-cols-1 gap-4 md:gap-8 max-w-7xl">
