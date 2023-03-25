@@ -1,12 +1,18 @@
 export default function formatBbcDate(currentTab: string) {
-  const formattedTab = currentTab == "Today" ? new Date() : currentTab;
+  let formattedTab = "";
+
+  if (currentTab === "Today") {
+    formattedTab = new Date().toISOString();
+  } else {
+    formattedTab = currentTab;
+  }
 
   // convert date to simple XXXX-XX-XX format
   const date = new Date(formattedTab);
 
   const year = date.getFullYear();
   const month = date.getMonth() + 1;
-  const day = date.getDate() - 1;
+  const day = date.getDate();
 
   let newMonth = month.toString();
   let newDay = day.toString();
