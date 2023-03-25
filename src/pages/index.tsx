@@ -3,7 +3,6 @@ import useGetAllFootballMatches from "~/hooks/useGetAllFootballMatches";
 import { useEffect, useState } from "react";
 import { format } from "date-fns";
 
-import formatBbcDate from "~/ServerFunctions/formatBbcDate";
 import scrapeBbcSports from "~/ServerFunctions/scrapeBbcSports";
 import FootballMatchComp from "~/components/footballMatch";
 
@@ -22,7 +21,6 @@ type FootballLogoSearchResponse = {
     }[];
   }[];
 };
-
 interface FootballProps {
   count: number;
   initialData: FootballCategory[];
@@ -161,7 +159,9 @@ function processAndApplyData(data: FootballCategory[]) {
 }
 
 export const getServerSideProps = async () => {
-  const { siteToScrape } = formatBbcDate("Today");
+  const date = new Date();
+  const niceDate = `${date.getFullYear()}-${date.getMonth() + 1}-${date.getDate()}`;
+  const siteToScrape = `https://www.bbc.com/sport/football/scores-fixtures/${niceDate}`;
   const data = await scrapeBbcSports(siteToScrape);
 
   if (!data) {
@@ -283,16 +283,6 @@ export default function Football({ count, initialData }: FootballProps) {
             </div>
           </div>
 
-          {/* Search bar */}
-          {/* <div className="w-full flex flex-col items-center justify-center gap-4">
-            <input
-              type="text"
-              className="w-full max-w-[400px] px-4 py-2 rounded-md bg-gray-800 text-white outline-none"
-              placeholder="Search for a team"
-              onChange={(e) => setSearch(e.target.value)}
-            />
-          </div> */}
-
           {isLoading && (
             <div className="flex flex-col items-center justify-center gap-4">
               <h2 className="text-2xl font-bold text-white">Loading...</h2>
@@ -310,7 +300,7 @@ export default function Football({ count, initialData }: FootballProps) {
                     {/* Matches */}
                     <div className="grid lg:grid-cols-3 md:grid-cols-2 sm:grid-cols-1 gap-4 md:gap-8 max-w-7xl">
                       {matches.map((match: FootballMatch, index) => {
-                        const { awayTeam, awayTeamScore, homeTeam, homeTeamScore, inProgress, time, aggScore, awayTeamLogo, homeTeamLogo, group } = match;
+                        const { awayTeam, awayTeamScore, homeTeam, homeTeamScore, inProgress, time, aggScore, awayTeamLogo, homeTeamLogo, group, finalWinMessage } = match;
                         return (
                           <FootballMatchComp 
                             key={index}
@@ -324,6 +314,7 @@ export default function Football({ count, initialData }: FootballProps) {
                             awayTeamLogo={awayTeamLogo}
                             homeTeamLogo={homeTeamLogo}
                             group={group}
+                            finalWinMessage={finalWinMessage}
                           />
                         );
                       })}

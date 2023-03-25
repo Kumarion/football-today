@@ -3,7 +3,7 @@ import { load } from "cheerio";
 import { prisma } from "~/server/db";
 
 // We can make a request to update the database, we don't want to do this too often though, probably every hour or so
-async function databaseUpdate(categories: {heading: string; matches: {homeTeam: string; awayTeam: string; homeTeamScore: string; awayTeamScore: string; time: string; inProgress: boolean; aggScore?: string | null; cancelled?: boolean; group?: string;}[]}[], date: string) {
+async function databaseUpdate(categories: {heading: string; matches: {homeTeam: string; awayTeam: string; homeTeamScore: string; awayTeamScore: string; time: string; inProgress: boolean; aggScore?: string | null; cancelled?: boolean; group?: string; finalWinMessage?: string | null}[]}[], date: string) {
   // create a new category in the db with the heading and the matches
   // create a json that we can set 
   await prisma.footballMatchDay.upsert({
@@ -39,6 +39,7 @@ function scrapeBbcWithCompleteLink(link: string) {
           aggScore?: string | null;
           cancelled?: boolean;
           group?: string;
+          finalWinMessage?: string | null;
         }[];
       }[];
 
@@ -53,6 +54,7 @@ function scrapeBbcWithCompleteLink(link: string) {
           aggScore?: string | null;
           cancelled?: boolean;
           group?: string;
+          finalWinMessage?: string | null;
         }[];
 
         // for heading (international friendlies, premier league, more)
@@ -68,6 +70,7 @@ function scrapeBbcWithCompleteLink(link: string) {
             fixture.each((i, fixtureData) => {
               const home = $(fixtureData).find(".sp-c-fixture__wrapper").find("abbr").first().text();
               const away = $(fixtureData).find(".sp-c-fixture__wrapper").find("abbr").last().text();
+              const winMessage = $(fixtureData).find(".sp-c-fixture__win-message").text();
 
               const fixtureStatus = $(fixtureData).find(".sp-c-fixture__status").text();
               let time = $(fixtureData).find(".sp-c-fixture__number--time").text();
@@ -115,6 +118,7 @@ function scrapeBbcWithCompleteLink(link: string) {
                 inProgress: isInProgress ? true : false,
                 aggScore,
                 group,
+                finalWinMessage: winMessage == "" ? null : winMessage,
               });
             });
           });
@@ -129,11 +133,6 @@ function scrapeBbcWithCompleteLink(link: string) {
       return categories;
     });
 }
-
-// function migratePreviousDataToDatabase() {
-  
-// }
-
 
 // every 8 minutes
 function startInterval() {

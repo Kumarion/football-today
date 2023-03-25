@@ -40,6 +40,7 @@ const FootballMatchComp = ({
   group,
   aggScore,
   inProgress,
+  finalWinMessage,
 }: FootballMatch) => {
   return (
     <div
@@ -123,6 +124,12 @@ const FootballMatchComp = ({
           {aggScore && (
             <span className="text-[#f5a623] text-lg text-center w-full">
               {aggScore}
+            </span>
+          )}
+
+          {finalWinMessage && (
+            <span className="text-green-400 text-lg text-center w-full">
+              {finalWinMessage}
             </span>
           )}
 
