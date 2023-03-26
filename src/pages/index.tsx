@@ -162,9 +162,7 @@ export const getServerSideProps = async () => {
   // const niceDate = formulateTime("Today");
   // const siteToScrape = `https://www.bbc.com/sport/football/scores-fixtures/${niceDate}`;
   // const data = await scrapeBbcSports(siteToScrape);
-  console.log("Here");
   const data = await getPoolForToday();
-  console.log(data);
 
   if (!data) {
     return {
@@ -300,7 +298,7 @@ export default function Football({ count, todaysData }: FootballProps) {
                 return (
                   <div key={index}>
                     {/* Heading (international games, world cup, euros, friendlies, club friendlies, cups) */}
-                    <h2 className="text-2xl font-bold text-white mb-3 mt-7 hover:opacity-75 animate-pulse break-words">{heading}</h2>
+                    <h2 className="text-2xl font-bold text-white mb-3 mt-7 hover:opacity-75 animate-pulse break-words whitespace-pre-wrap">{heading}</h2>
 
                     {/* Matches */}
                     <div className="grid lg:grid-cols-3 md:grid-cols-2 sm:grid-cols-1 gap-4 md:gap-8 max-w-7xl">
