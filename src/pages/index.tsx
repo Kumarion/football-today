@@ -5,6 +5,7 @@ import { format } from "date-fns";
 
 import { getPoolForToday } from "~/ServerFunctions/scrapeBbcSports";
 import FootballMatchComp from "~/components/footballMatch";
+import { motion } from "framer-motion";
 
 import type { RouterOutputs } from "~/utils/api";
 import DateTab from "~/components/dateTab";
@@ -275,12 +276,26 @@ export default function Football({ count, todaysData }: FootballProps) {
             <div className="tabs max-w-7xl justify-center tabs-boxed bg-transparent">
               {formulateTabs().map((tab, index) => {
                 return (
-                  <DateTab 
+                  <motion.div
                     key={index}
-                    tab={tab}
-                    currentTab={currentTab}
-                    setCurrentTab={setTab}
-                  />
+                    initial="initial"
+                    animate="animate"
+                    variants={{
+                      initial: {
+                        opacity: 0,
+                      },
+                      animate: {
+                        opacity: 1,
+                      },
+                    }}
+                  >
+                    <DateTab 
+                      key={index}
+                      tab={tab}
+                      currentTab={currentTab}
+                      setCurrentTab={setTab}
+                    />
+                  </motion.div>
                 );
               })}
             </div>
@@ -308,20 +323,39 @@ export default function Football({ count, todaysData }: FootballProps) {
                       {matches.map((match: FootballMatch, index) => {
                         const { awayTeam, awayTeamScore, homeTeam, homeTeamScore, inProgress, time, aggScore, awayTeamLogo, homeTeamLogo, group, finalWinMessage } = match;
                         return (
-                          <FootballMatchComp 
+                          <motion.div
                             key={index}
-                            awayTeam={awayTeam}
-                            awayTeamScore={awayTeamScore}
-                            homeTeam={homeTeam}
-                            homeTeamScore={homeTeamScore}
-                            inProgress={inProgress}
-                            time={time}
-                            aggScore={aggScore}
-                            awayTeamLogo={awayTeamLogo}
-                            homeTeamLogo={homeTeamLogo}
-                            group={group}
-                            finalWinMessage={finalWinMessage}
-                          />
+                            initial={{ scale: 0 }}
+                            animate={{ rotate: 360, scale: 1 }}
+                            variants={{
+                              initial: {
+                                opacity: 0,
+                              },
+                              animate: {
+                                opacity: 1,
+                              },
+                            }}
+                            transition={{
+                              type: "spring",
+                              stiffness: 260,
+                              damping: 20
+                            }}
+                          >
+                            <FootballMatchComp 
+                              key={index}
+                              awayTeam={awayTeam}
+                              awayTeamScore={awayTeamScore}
+                              homeTeam={homeTeam}
+                              homeTeamScore={homeTeamScore}
+                              inProgress={inProgress}
+                              time={time}
+                              aggScore={aggScore}
+                              awayTeamLogo={awayTeamLogo}
+                              homeTeamLogo={homeTeamLogo}
+                              group={group}
+                              finalWinMessage={finalWinMessage}
+                            />
+                          </motion.div>
                         );
                       })}
                     </div>
