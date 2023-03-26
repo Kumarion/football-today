@@ -298,7 +298,10 @@ export default function Football({ count, todaysData }: FootballProps) {
                 return (
                   <div key={index}>
                     {/* Heading (international games, world cup, euros, friendlies, club friendlies, cups) */}
-                    <h2 className="text-2xl font-bold text-white mb-3 mt-7 hover:opacity-75 animate-pulse break-words whitespace-pre-wrap">{heading}</h2>
+                    {/* Make sure it wraps the text if its too large */}
+                    <div className="flex flex-col items-start justify-start">
+                      <h2 className="lg:text-2xl sm:text-1xl font-bold text-white mb-3 mt-7 hover:opacity-75 animate-pulse break-words whitespace-pre-wrap">{heading}</h2>
+                    </div>
 
                     {/* Matches */}
                     <div className="grid lg:grid-cols-3 md:grid-cols-2 sm:grid-cols-1 gap-4 md:gap-8 max-w-7xl">
