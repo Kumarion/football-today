@@ -21,6 +21,16 @@ model Example {
     updatedAt DateTime @updatedAt
 }
 
+model TodaysMatches {
+    id        String   @id @default(cuid())
+    createdAt DateTime @default(now())
+    updatedAt DateTime @updatedAt
+    date      String   @unique
+    fixtureData Json @db.Json
+
+    @@index([date], name: "date")
+}
+
 model FootballMatchDay {
     id        String   @id @default(cuid())
     createdAt DateTime @default(now())

@@ -26,7 +26,6 @@ type FootballMatch = RouterOutputs["football"]["getCurrentFootballMatches"][0]["
 type FootballCategory = RouterOutputs["football"]["getCurrentFootballMatches"][0];
 
 let serverStart = false;
-let pool = [] as poolType[];
 
 function sortCategories(a: FootballCategory, b: FootballCategory) {
   const aIndex = categoriesToComeFirst.indexOf(a.heading);
@@ -214,15 +213,32 @@ function startPoolInterval() {
       // const matchesForToday = categories[0]?.matches || [];
 
       // clear the pool
-      pool = [];
+      // upsert the database with the new fixture data (or update it if it already exists)
+      const toJson = JSON.stringify(categories);
+      prisma.todaysMatches.upsert({
+        where: {
+          date: todaysDate,
+        },
+        update: {
+          date: todaysDate,
+          fixtureData: toJson,
+        },
+        create: {
+          date: todaysDate,
+          fixtureData: toJson,
+        },
+      }).then(() => {
+        console.log("Updated the pool for today");
+      }).catch(console.error);
 
       // update the pool
-      categories.map((category) => {
-        pool.push({
-          heading: category.heading,
-          matches: category.matches,
-        });
-      });
+      // categories.map((category) => {
+      //   pool.push({
+      //     heading: category.heading,
+      //     matches: category.matches,
+      //   });
+      // });
+
 
 
       // logging
@@ -270,10 +286,24 @@ function startInterval() {
 
 startInterval();
 
-const getPoolForToday = () => {
-  const sortedCategories = pool.sort(sortCategories);
+const getPoolForToday = async () => {
+  // get the pool for today in the database
+  const dataForToday = await prisma.todaysMatches.findUnique({
+    where: {
+      date: new Date().toISOString().split("T")[0] as string,
+    },
+  });
 
-  // work with each category
+  // no data for today
+  if (!dataForToday) {
+    console.log("No data for today");
+    return [];
+  }
+
+  const parsedData = JSON.parse(dataForToday.fixtureData as string) as FootballCategory[];
+  const sortedCategories = parsedData.sort(sortCategories);
+
+  // // work with each category
   const newSortedData = sortedCategories.map((category) => {
     // sort the matches
     const sortedMatches = category.matches.sort(sortByInProgress);
