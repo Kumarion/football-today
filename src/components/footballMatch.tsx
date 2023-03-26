@@ -116,7 +116,7 @@ const FootballMatchComp = ({
 
         {inProgress && (
           <span className="text-[#f5a623] text-lg text-center w-full">
-                In progress
+              In progress
           </span>
         )}
             
@@ -139,7 +139,8 @@ const FootballMatchComp = ({
             </span>
           ) || (
             <span className="text-3xl text-center w-full font-mono">
-              {time}
+              {/* remove spaces */}
+              {time.replace(/\s/g, "")}
             </span>
           )}
         </span>
