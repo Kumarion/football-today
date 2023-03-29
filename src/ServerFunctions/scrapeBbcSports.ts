@@ -1,72 +1,8 @@
 import fetch from "node-fetch";
 import { load } from "cheerio";
 import { prisma } from "~/server/db";
-import { categoriesToComeFirst } from "~/helpers/footballCategoriesAlgorithm";
-import type { RouterOutputs } from "~/utils/api";
-
-type poolType = {
-  heading: string;
-  matches: {
-    homeTeam: string;
-    awayTeam: string;
-    homeTeamScore: string;
-    awayTeamScore: string;
-    time: string;
-    inProgress: boolean;
-    aggScore?: string | null;
-    cancelled?: boolean;
-    group?: string;
-    finalWinMessage?: string | null;
-  }[];
-};
-type FootballMatch = RouterOutputs["football"]["getCurrentFootballMatches"][0]["matches"][0] & {
-  homeTeamLogo?: string;
-  awayTeamLogo?: string;
-};
-type FootballCategory = RouterOutputs["football"]["getCurrentFootballMatches"][0];
 
 let serverStart = false;
-
-function sortCategories(a: FootballCategory, b: FootballCategory) {
-  const aIndex = categoriesToComeFirst.indexOf(a.heading);
-  const bIndex = categoriesToComeFirst.indexOf(b.heading);
-
-  if (aIndex == -1 && bIndex == -1) {
-    return a.heading.localeCompare(b.heading);
-  }
-
-  if (aIndex == -1) {
-    return 1;
-  }
-
-  if (bIndex == -1) {
-    return -1;
-  }
-
-  return aIndex - bIndex;
-}
-
-function sortByInProgress(a: FootballMatch, b: FootballMatch) {
-  // Needs to be sorted like so
-  // 1. In progress
-  // 2. Finished
-  // 3. Not started
-
-  const aInProgress = a.inProgress;
-  const bInProgress = b.inProgress;
-  const aFinished = a.homeTeamScore != "" && a.awayTeamScore != "";
-  const bFinished = b.homeTeamScore != "" && b.awayTeamScore != "";
-  const aNotStarted = a.homeTeamScore == "" && a.awayTeamScore == "";
-  const bNotStarted = b.homeTeamScore == "" && b.awayTeamScore == "";
-
-  return (
-    (aInProgress ? 0 : 1) - (bInProgress ? 0 : 1) ||
-    (aFinished ? 0 : 1) - (bFinished ? 0 : 1) ||
-    (aNotStarted ? 0 : 1) - (bNotStarted ? 0 : 1)
-  );
-
-  return 0;
-}
 
 // We can make a request to update the database, we don't want to do this too often though, probably every hour or so
 async function databaseUpdate(categories: {heading: string; matches: {homeTeam: string; awayTeam: string; homeTeamScore: string; awayTeamScore: string; time: string; inProgress: boolean; aggScore?: string | null; cancelled?: boolean; group?: string; finalWinMessage?: string | null}[]}[], date: string) {
@@ -200,63 +136,8 @@ function scrapeBbcWithCompleteLink(link: string) {
     });
 }
 
-// every 3 minutes to update the pool for today
-function startPoolInterval() {
-  const todaysDate = new Date().toISOString().split("T")[0] as string;
-
-  setInterval(() => {
-    console.log("Updating the pool for today...");
-
-    scrapeBbcWithCompleteLink(
-      `https://www.bbc.co.uk/sport/football/scores-fixtures/${todaysDate}`
-    ).then((categories) => {
-      // const matchesForToday = categories[0]?.matches || [];
-
-      // clear the pool
-      // upsert the database with the new fixture data (or update it if it already exists)
-      const toJson = JSON.stringify(categories);
-      prisma.todaysMatches.upsert({
-        where: {
-          date: todaysDate,
-        },
-        update: {
-          date: todaysDate,
-          fixtureData: toJson,
-        },
-        create: {
-          date: todaysDate,
-          fixtureData: toJson,
-        },
-      }).then(() => {
-        console.log("Updated the pool for today");
-      }).catch(console.error);
-
-      // update the pool
-      // categories.map((category) => {
-      //   pool.push({
-      //     heading: category.heading,
-      //     matches: category.matches,
-      //   });
-      // });
-
-
-
-      // logging
-      // console.log(pool);
-      // pool.map((category) => {
-      //   console.log(category.heading);
-      //   category.matches.map((match) => {
-      //     console.log(match);
-      //   });
-      // });
-    }).catch(console.error);
-  }, 180000);
-}
-
-startPoolInterval();
-
 // every 8 minutes
-function startInterval() {
+function startPreviousDaysInterval() {
   setInterval(() => {
     console.log("Upserting database with previous data...");
   
@@ -284,52 +165,17 @@ function startInterval() {
   }, 1000 * 60 * 8);
 }
 
-startInterval();
-
-const getPoolForToday = async () => {
-  // get the pool for today in the database
-  const dataForToday = await prisma.todaysMatches.findUnique({
-    where: {
-      date: new Date().toISOString().split("T")[0] as string,
-    },
-  });
-
-  // no data for today
-  if (!dataForToday) {
-    console.log("No data for today");
-    return [];
-  }
-
-  const parsedData = JSON.parse(dataForToday.fixtureData as string) as FootballCategory[];
-  const sortedCategories = parsedData.sort(sortCategories);
-
-  // // work with each category
-  const newSortedData = sortedCategories.map((category) => {
-    // sort the matches
-    const sortedMatches = category.matches.sort(sortByInProgress);
-    
-    return {
-      ...category,
-      matches: sortedMatches,
-    };
-  });
-  
-  return newSortedData;
-};
-
 const scrapeBbcSports = async (link: string) => {
   const categories = await scrapeBbcWithCompleteLink(link);
-  console.log("Scraped BBC Sports for fixtures");
-
-  // if (!serverStart) {
-  //   // start our intervals if it's the first time we're scraping
-  //   startPoolInterval();
-  //   startInterval();
-  //   serverStart = true;
-  // }
+  console.log("Scraped BBC Sports for match fixtures");
 
   // update todays data in prisma if it's not already there, and if its the first time we're scraping
   if (!serverStart) {
+    // we want to start the interval after we've updated the database for today
+    // this is an interval for upserting data for previous days
+    startPreviousDaysInterval();
+
+    // do the data for today
     const todaysDate = new Date().toISOString().split("T")[0] as string;
     const todaysData = await prisma.todaysMatches.findUnique({
       where: {
@@ -358,32 +204,7 @@ const scrapeBbcSports = async (link: string) => {
     }
   }
 
-  // get test data for date 2023-03-22
-  // const test = await prisma.footballMatchDay.findUnique({
-  //   where: {
-  //     date: "2023-03-22",
-  //   },
-  // });
-
-  // if (test && test.fixtureData) {
-  //   const testCategories = JSON.parse(test.fixtureData as string) as {
-  //     heading: string;
-  //     matches: {
-  //       homeTeam: string;
-  //       awayTeam: string;
-  //       homeTeamScore: string;
-  //       awayTeamScore: string;
-  //       time: string;
-  //       inProgress: boolean;
-  //       aggScore?: string | null;
-  //       cancelled?: boolean;
-  //       group?: string;
-  //     }[];
-  //   }[];
-  //   console.log(testCategories);
-  // }
-
   return categories;
 };
 
-export { scrapeBbcSports, getPoolForToday };
+export { scrapeBbcSports };

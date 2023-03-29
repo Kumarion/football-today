@@ -3,7 +3,6 @@ import useGetAllFootballMatches from "~/hooks/useGetAllFootballMatches";
 import { useEffect, useState } from "react";
 import { format } from "date-fns";
 
-// import { getPoolForToday } from "~/ServerFunctions/scrapeBbcSports";
 import FootballMatchComp from "~/components/footballMatch";
 import { motion } from "framer-motion";
 
@@ -159,30 +158,6 @@ function processAndApplyData(data: FootballCategory[]) {
   return Promise.all(appendImagesToFinalSortedData);
 }
 
-// export const getServerSideProps = async () => {
-//   // const niceDate = formulateTime("Today");
-//   // const siteToScrape = `https://www.bbc.com/sport/football/scores-fixtures/${niceDate}`;
-//   // const data = await scrapeBbcSports(siteToScrape);
-//   const data = await getPoolForToday();
-
-//   if (!data) {
-//     return {
-//       props: {
-//         count: 0,
-//       },
-//     };
-//   }
-
-//   const count = data.reduce((acc, category) => acc + category.matches.length, 0);
-
-//   return {
-//     props: {
-//       count,
-//       todaysData: data,
-//     },
-//   };
-// };
-
 export const getStaticProps = async () => {
   const prismaClient = new PrismaClient();
 
@@ -258,8 +233,6 @@ function formulateTime(currentTab: string) {
 
 export default function Football({ todaysData }: FootballProps) {
   const [currentTab, setCurrentTab] = useState("Today");
-  // const [search, setSearch] = useState("");
-
   const countForToday = todaysData.reduce((acc, category) => acc + category.matches.length, 0);
 
   // set football categories for the current tab

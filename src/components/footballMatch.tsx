@@ -1,5 +1,5 @@
 import { format } from "date-fns";
-import { getTimezoneOffset, utcToZonedTime, zonedTimeToUtc } from "date-fns-tz";
+import { getTimezoneOffset, zonedTimeToUtc } from "date-fns-tz";
 import Image from "next/image";
 
 import type { RouterOutputs } from "~/utils/api";
