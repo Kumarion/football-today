@@ -205,9 +205,23 @@ export const getStaticProps = async () => {
 
   const parsedData = JSON.parse(todaysData.fixtureData as string) as FootballCategory[];
 
+  // sort 
+  const sortedCategories = parsedData.sort(sortCategories);
+
+  // // work with each category
+  const newSortedData = sortedCategories.map((category) => {
+    // sort the matches
+    const sortedMatches = category.matches.sort(sortByInProgress);
+    
+    return {
+      ...category,
+      matches: sortedMatches,
+    };
+  });
+
   return {
     props: {
-      todaysData: parsedData,
+      todaysData: newSortedData,
     },
   };
 };
