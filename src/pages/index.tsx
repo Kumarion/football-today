@@ -10,6 +10,7 @@ import { motion } from "framer-motion";
 import type { RouterOutputs } from "~/utils/api";
 import DateTab from "~/components/dateTab";
 import { categoriesToComeFirst } from "~/helpers/footballCategoriesAlgorithm";
+import { PrismaClient } from "@prisma/client";
 type FootballMatch = RouterOutputs["football"]["getCurrentFootballMatches"][0]["matches"][0] & {
   homeTeamLogo?: string;
   awayTeamLogo?: string;
@@ -159,26 +160,58 @@ function processAndApplyData(data: FootballCategory[]) {
   return Promise.all(appendImagesToFinalSortedData);
 }
 
-export const getServerSideProps = async () => {
-  // const niceDate = formulateTime("Today");
-  // const siteToScrape = `https://www.bbc.com/sport/football/scores-fixtures/${niceDate}`;
-  // const data = await scrapeBbcSports(siteToScrape);
-  const data = await getPoolForToday();
+// export const getServerSideProps = async () => {
+//   // const niceDate = formulateTime("Today");
+//   // const siteToScrape = `https://www.bbc.com/sport/football/scores-fixtures/${niceDate}`;
+//   // const data = await scrapeBbcSports(siteToScrape);
+//   const data = await getPoolForToday();
 
-  if (!data) {
+//   if (!data) {
+//     return {
+//       props: {
+//         count: 0,
+//       },
+//     };
+//   }
+
+//   const count = data.reduce((acc, category) => acc + category.matches.length, 0);
+
+//   return {
+//     props: {
+//       count,
+//       todaysData: data,
+//     },
+//   };
+// };
+
+export const getStaticProps = async () => {
+  const prismaClient = new PrismaClient();
+
+  const todaysData = await prismaClient.todaysMatches.findUnique({
+    where: {
+      date: new Date().toISOString().split("T")[0] as string,
+    },
+    select: {
+      fixtureData: true,
+    },
+  });
+
+  if (!todaysData) {
     return {
       props: {
         count: 0,
+        todaysData: null,
       },
     };
   }
 
-  const count = data.reduce((acc, category) => acc + category.matches.length, 0);
+  const parsedData = JSON.parse(todaysData.fixtureData as string) as FootballCategory[];
+  const count = parsedData.reduce((acc, category) => acc + category.matches.length, 0);
 
   return {
     props: {
       count,
-      todaysData: data,
+      todaysData: parsedData,
     },
   };
 };
