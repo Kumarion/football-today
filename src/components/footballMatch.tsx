@@ -1,4 +1,5 @@
 import { format } from "date-fns";
+import { getTimezoneOffset, utcToZonedTime, zonedTimeToUtc } from "date-fns-tz";
 import Image from "next/image";
 
 import type { RouterOutputs } from "~/utils/api";
@@ -8,26 +9,36 @@ type FootballMatch = RouterOutputs["football"]["getCurrentFootballMatches"][0]["
 };
 
 function getActualTime(team: string, time: string) {
+  // the time is in UK and 24 hours format, we need to convert it to the user's timezone and 12 hours format
   if (time == "") {
     return time;
   }
-  
-  const timeSplit = time.split(":") as [string, string];
-  const hours = timeSplit[0];
-  const minutes = timeSplit[1];
-  
+
+  const newTime = new Date();
+  const [hours, minutes] = time.split(":");
+
   if (!hours || !minutes) {
     return time;
   }
+
+  newTime.setHours(parseInt(hours));
+  newTime.setMinutes(parseInt(minutes));
+
+  // get current timezone for the user
+  const timezone = Intl.DateTimeFormat().resolvedOptions().timeZone;
+  console.log(timezone);
+
+  const utcTime = zonedTimeToUtc(newTime, timezone);
   
-  const currentDate = new Date();
-  
-  // convert the hours and minutes to a utc date
-  currentDate.setUTCHours(parseInt(hours));
-  currentDate.setMinutes(parseInt(minutes));
-  
-  return format(currentDate, "hh:mm a");
+  // get offset of the timezone to london
+  const offsetInMs = getTimezoneOffset(timezone, utcTime);
+  const offsetInHours = offsetInMs / 1000 / 60 / 60;
+
+  newTime.setHours(newTime.getHours() + offsetInHours - 1);
+
+  return format(newTime, "h:mm a");
 }
+
 
 const FootballMatchComp = ({
   homeTeam,
