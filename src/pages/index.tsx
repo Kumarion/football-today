@@ -3,7 +3,7 @@ import useGetAllFootballMatches from "~/hooks/useGetAllFootballMatches";
 import { useEffect, useState } from "react";
 import { format } from "date-fns";
 
-import { getPoolForToday } from "~/ServerFunctions/scrapeBbcSports";
+// import { getPoolForToday } from "~/ServerFunctions/scrapeBbcSports";
 import FootballMatchComp from "~/components/footballMatch";
 import { motion } from "framer-motion";
 
@@ -24,7 +24,6 @@ type FootballLogoSearchResponse = {
   }[];
 };
 interface FootballProps {
-  count: number;
   todaysData: FootballCategory[];
 }
 
@@ -199,18 +198,15 @@ export const getStaticProps = async () => {
   if (!todaysData) {
     return {
       props: {
-        count: 0,
         todaysData: [],
       },
     };
   }
 
   const parsedData = JSON.parse(todaysData.fixtureData as string) as FootballCategory[];
-  const count = parsedData.reduce((acc, category) => acc + category.matches.length, 0);
 
   return {
     props: {
-      count,
       todaysData: parsedData,
     },
   };
@@ -246,9 +242,11 @@ function formulateTime(currentTab: string) {
   return newDate;
 }
 
-export default function Football({ count, todaysData }: FootballProps) {
+export default function Football({ todaysData }: FootballProps) {
   const [currentTab, setCurrentTab] = useState("Today");
   // const [search, setSearch] = useState("");
+
+  const countForToday = todaysData.reduce((acc, category) => acc + category.matches.length, 0);
 
   // set football categories for the current tab
   const [footballCategoryData, setFootballCategoryData] = useState<FootballCategory[]>(todaysData);
@@ -277,15 +275,15 @@ export default function Football({ count, todaysData }: FootballProps) {
     <>
       <Head>
         {/* Calculate how many matches are in all categories */}
-        <title>🔴 Football Today - {count} matches</title>
+        <title>🔴 Football Today - {countForToday} matches</title>
         <meta
           name="og:title"
-          content={`🔴 Football Today - ${count} matches`}
+          content={`🔴 Football Today - ${countForToday} matches`}
         />
         <meta
           name="description"
           content={`Displaying live football scores!
-          There are ${count} football matches on today!
+          There are ${countForToday} football matches on today!
 
           Football Today is a website that displays live football scores for all the major leagues.
           `}
