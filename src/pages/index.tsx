@@ -370,8 +370,8 @@ export default function Football({ todaysData }: FootballProps) {
                         return (
                           <motion.div
                             key={index}
-                            initial={{ scale: 0 }}
-                            animate={{ rotate: 360, scale: 1 }}
+                            initial={{ opacity: 0, scale: 0.8 }}
+                            animate={{ opacity: 1, scale: 1 }}
                             variants={{
                               initial: {
                                 opacity: 0,
