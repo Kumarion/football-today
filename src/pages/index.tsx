@@ -200,7 +200,7 @@ export const getStaticProps = async () => {
     return {
       props: {
         count: 0,
-        todaysData: null,
+        todaysData: [],
       },
     };
   }
