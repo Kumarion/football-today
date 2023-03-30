@@ -339,7 +339,10 @@ export default function Football({ todaysData }: FootballProps) {
                     {/* Matches */}
                     <div className="grid lg:grid-cols-3 md:grid-cols-2 sm:grid-cols-1 gap-4 md:gap-8 max-w-7xl">
                       {matches.map((match: FootballMatch, index) => {
-                        const { awayTeam, awayTeamScore, homeTeam, homeTeamScore, inProgress, time, aggScore, awayTeamLogo, homeTeamLogo, group, finalWinMessage } = match;
+                        const { awayTeam, awayTeamScore, homeTeam, homeTeamScore, inProgress, time, aggScore, awayTeamLogo, homeTeamLogo, group, finalWinMessage, awayScorers, homeScorers } = match;
+                        // console.log(awayScorers);
+                        // console.log(homeScorers);
+    
                         return (
                           <motion.div
                             key={index}
@@ -372,6 +375,8 @@ export default function Football({ todaysData }: FootballProps) {
                               homeTeamLogo={homeTeamLogo}
                               group={group}
                               finalWinMessage={finalWinMessage}
+                              awayScorers={awayScorers}
+                              homeScorers={homeScorers}
                             />
                           </motion.div>
                         );

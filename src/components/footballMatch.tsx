@@ -52,6 +52,8 @@ const FootballMatchComp = ({
   aggScore,
   inProgress,
   finalWinMessage,
+  awayScorers,
+  homeScorers,
 }: FootballMatch) => {
   return (
     <div
@@ -61,64 +63,96 @@ const FootballMatchComp = ({
       <div className="flex-row gap-3">
         {homeTeamScore == "" && awayTeamScore == "" && (
           <h1 className="text-blue-400 text-xl text-center mb-4">
-                Not started
+              Not started
           </h1>
         )}
 
         {/* Country v Country with flag */}
-        <div className="flex flex-row gap-4 items-center justify-between w-full">
-          <div className="flex flex-col items-center w-28 h-20 hover:scale-110 transform transition duration-150 ease-in-out">
-            <Image
-              src={homeTeamLogo == "" ? "/emptyfc.png" : homeTeamLogo || "/emptyfc.png"}
-              width={70}
-              height={70}
-              quality={100}
-              alt=""
-            />
+        <div className="grid grid-cols-3 gap-7 items-center">
+          <div className="w-auto grid grid-rows-1 gap-2 h-full">
+            <div className="hover:scale-110 transform transition duration-150 ease-in-out">
+              <Image
+                src={homeTeamLogo == "" ? "/emptyfc.png" : homeTeamLogo || "/emptyfc.png"}
+                width={65}
+                height={65}
+                quality={100}
+                className="ml-2"
+                alt=""
+              />
 
-            <h1 className="text-center">
-              {homeTeam}
-            </h1>
+              <div className="text-center">
+                <h1 className="text-center w-20 break-words">
+                  {homeTeam}
+                </h1>
+              </div>
+            </div>
+
+            <ul className="min-h-10">
+              {homeScorers && homeScorers.length > 0 && homeScorers.map((scorer) => (
+                <li 
+                  key={scorer[0]} 
+                  className="text-xs text-left break-words"
+                >
+                  {scorer[0]} <span className="text-green-400">{scorer[1].join(", ")}</span>
+                </li>
+              ))}
+            </ul>
           </div>
               
-          <div className="flex flex-row items-center gap-5 mb-2">
+          <div className="flex flex-row justify-center items-center gap-2 mb-10 h-full">
             <div>
-              <span className="text-3xl font-bold">
+              <span className="text-4xl font-bold">
                 {homeTeamScore}
               </span>
             </div>
 
             <div>
-              <span className="text-2xl font-mono">
+              <span className="text-4xl font-mono">
                     -
               </span>
             </div>
 
             <div>
-              <span className="text-3xl font-bold">
+              <span className="text-4xl font-bold">
                 {awayTeamScore}
               </span>
             </div>
           </div>
               
-          <div className="flex flex-col items-center w-28 h-20 hover:scale-110 transform transition duration-150 ease-in-out">
-            <Image
-              src={awayTeamLogo == "" ? "/emptyfc.png" : awayTeamLogo || "/emptyfc.png"}
-              width={70}
-              height={70}
-              quality={100}
-              alt=""
-            />
+          <div className="w-auto grid grid-rows-1 gap-2 h-full">
+            <div className="hover:scale-110 transform transition duration-150 ease-in-out">
+              <Image
+                src={awayTeamLogo == "" ? "/emptyfc.png" : awayTeamLogo || "/emptyfc.png"}
+                width={65}
+                height={65}
+                quality={100}
+                className="ml-2"
+                alt=""
+              />
 
-            <h1 className="text-center">
-              {awayTeam}
-            </h1>
+              <div>
+                <h1 className="text-center w-20 break-words">
+                  {awayTeam}
+                </h1>
+              </div>
+            </div>
+
+            <ul className="min-h-10">
+              {awayScorers && awayScorers.length > 0 && awayScorers.map((scorer) => (
+                <li 
+                  key={scorer[0]} 
+                  className="text-xs text-left w-12"
+                >
+                  {scorer[0]} <span className="text-green-400">{scorer[1].join(", ")}</span>
+                </li>
+              ))}
+            </ul>
           </div>
         </div>
             
       </div>
           
-      <div className="grid justify-center mt-9 gap-1 w-full">
+      <div className="grid justify-center mt-4 gap-1 w-full">
         {group && (
           <span className="text-[#f5a623] text-lg text-center w-full">
             {group}

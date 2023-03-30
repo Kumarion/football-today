@@ -1,6 +1,7 @@
 import fetch from "node-fetch";
 import { load } from "cheerio";
 import { prisma } from "~/server/db";
+import { appendScorers } from "~/server/api/routers/football";
 
 let serverStart = false;
 
@@ -24,7 +25,7 @@ async function databaseUpdate(categories: {heading: string; matches: {homeTeam: 
   });
 }
 
-function scrapeBbcWithCompleteLink(link: string) {
+async function scrapeBbcWithCompleteLink(link: string) {
   return fetch(link)
     .then((res) => res.text())
     .then((body) => {
@@ -42,6 +43,8 @@ function scrapeBbcWithCompleteLink(link: string) {
           cancelled?: boolean;
           group?: string;
           finalWinMessage?: string | null;
+          homeScorers?: string[];
+          awayScorers?: string[];
         }[];
       }[];
 
@@ -137,7 +140,28 @@ function scrapeBbcWithCompleteLink(link: string) {
 }
 
 // every 8 minutes
-function startPreviousDaysInterval() {
+async function startPreviousDaysInterval() {
+  // do the data for today
+  const todaysDate = new Date().toISOString().split("T")[0] as string;
+  const categories = await scrapeBbcWithCompleteLink(`https://www.bbc.co.uk/sport/football/scores-fixtures/${todaysDate}`);
+  const newDataWithScorers = await appendScorers(categories, todaysDate);
+  const toJson = JSON.stringify(newDataWithScorers);
+  console.log(todaysDate, "todays date");
+  console.log(toJson);
+
+  await prisma.todaysMatches.upsert({
+    where: {
+      date: todaysDate,
+    },
+    update: {
+      fixtureData: toJson,
+    },
+    create: {
+      date: todaysDate,
+      fixtureData: toJson,
+    },
+  });
+
   setInterval(() => {
     console.log("Upserting database with previous data...");
   
@@ -173,35 +197,8 @@ const scrapeBbcSports = async (link: string) => {
   if (!serverStart) {
     // we want to start the interval after we've updated the database for today
     // this is an interval for upserting data for previous days
-    startPreviousDaysInterval();
-
-    // do the data for today
-    const todaysDate = new Date().toISOString().split("T")[0] as string;
-    const todaysData = await prisma.todaysMatches.findUnique({
-      where: {
-        date: todaysDate,
-      },
-    });
-
-    if (!todaysData) {
-      const toJson = JSON.stringify(categories);
-      prisma.todaysMatches.upsert({
-        where: {
-          date: todaysDate,
-        },
-        update: {
-          date: todaysDate,
-          fixtureData: toJson,
-        },
-        create: {
-          date: todaysDate,
-          fixtureData: toJson,
-        },
-      }).then(() => {
-        console.log("Updated the pool for today");
-        serverStart = true;
-      }).catch(console.error);
-    }
+    serverStart = true;
+    startPreviousDaysInterval().then(() => console.log("Started interval for previous days")).catch(console.error);
   }
 
   return categories;
