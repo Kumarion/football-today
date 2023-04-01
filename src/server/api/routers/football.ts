@@ -194,11 +194,8 @@ export const footballRouter = createTRPCRouter({
       const start = Date.now();
       const siteToScrape = `https://www.bbc.com/sport/football/scores-fixtures/${currentTab}`;
       
-      // run both functions in parallel using Promise.all()
-      const [categories, newCategories] = await Promise.all([
-        scrapeBbcSports(siteToScrape),
-        scrapeBbcSports(siteToScrape).then(categories => appendScorers(categories, currentTab))
-      ]);
+      const categories = await scrapeBbcSports(siteToScrape);
+      const newCategories = await appendScorers(categories, currentTab);
 
       console.log("Done scraping and adding scorers");
       const timeTakenInSecs = (Date.now() - start) / 1000;
