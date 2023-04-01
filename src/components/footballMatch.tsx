@@ -26,8 +26,6 @@ function getActualTime(team: string, time: string) {
 
   // get current timezone for the user
   const timezone = Intl.DateTimeFormat().resolvedOptions().timeZone;
-  console.log(timezone);
-
   const utcTime = zonedTimeToUtc(newTime, timezone);
   
   // get offset of the timezone to london
@@ -35,7 +33,6 @@ function getActualTime(team: string, time: string) {
   const offsetInHours = offsetInMs / 1000 / 60 / 60;
 
   newTime.setHours(newTime.getHours() + offsetInHours - 1);
-
   return format(newTime, "h:mm a");
 }
 

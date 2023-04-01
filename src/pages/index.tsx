@@ -10,6 +10,7 @@ import type { RouterOutputs } from "~/utils/api";
 import DateTab from "~/components/dateTab";
 import { categoriesToComeFirst } from "~/helpers/footballCategoriesAlgorithm";
 import { PrismaClient } from "@prisma/client";
+import { api } from "~/utils/api";
 type FootballMatch = RouterOutputs["football"]["getCurrentFootballMatches"][0]["matches"][0] & {
   homeTeamLogo?: string;
   awayTeamLogo?: string;
@@ -238,20 +239,20 @@ export default function Football({ todaysData }: FootballProps) {
   // set football categories for the current tab
   const [footballCategoryData, setFootballCategoryData] = useState<FootballCategory[]>(todaysData);
 
-  // get all football matches
-  const { isLoading, data, refetch } = useGetAllFootballMatches({
-    currentTab: formulateTime(currentTab),
+  const { isLoading, refetch } = api.football.getCurrentFootballMatches.useQuery({ currentTab: formulateTime(currentTab) }, {
+    // refetch every 10 seconds
+    // not sure how efficient this is, but it's a start
     enabled: true,
-  });
-
-  // useEffect for further tab data
-  useEffect(() => {
-    if (data) {
+    refetchInterval: 5000,
+    refetchOnWindowFocus: true,
+    onSuccess: (data) => {
+      console.log("success");
       void processAndApplyData(data).then((processedData) => {
         setFootballCategoryData(processedData);
       });
+      console.log(data);
     }
-  }, [data]);
+  });
 
   const setTab = (tab: string) => {
     void refetch();
@@ -320,66 +321,74 @@ export default function Football({ todaysData }: FootballProps) {
           </div>
 
           <div>
-            {footballCategoryData.map((category, index) => {
-              const { heading, matches } = category;
+            {isLoading ? (
+              <div className="flex flex-col items-center justify-center gap-3">
+                <p className="text-white text-center">Loading...</p>
+              </div>
+            ) : (
+              <div>
+                {footballCategoryData.map((category, index) => {
+                  const { heading, matches } = category;
 
-              return (
-                <div key={index}>
-                  {/* Heading (international games, world cup, euros, friendlies, club friendlies, cups) */}
-                  {/* Make sure it wraps the text if its too large */}
-                  <div className="flex flex-col items-start justify-start">
-                    <h2 className="lg:text-2xl sm:text-1xl font-bold text-white mb-3 mt-7 hover:opacity-75 animate-pulse break-words whitespace-pre-wrap">{heading}</h2>
-                  </div>
+                  return (
+                    <div key={index}>
+                      {/* Heading (international games, world cup, euros, friendlies, club friendlies, cups) */}
+                      {/* Make sure it wraps the text if its too large */}
+                      <div className="flex flex-col items-start justify-start">
+                        <h2 className="lg:text-2xl sm:text-1xl font-bold text-white mb-3 mt-7 hover:opacity-75 animate-pulse break-words whitespace-pre-wrap">{heading}</h2>
+                      </div>
 
-                  {/* Matches */}
-                  <div className="grid lg:grid-cols-3 md:grid-cols-2 sm:grid-cols-1 gap-4 md:gap-8 max-w-7xl">
-                    {matches.map((match: FootballMatch, index) => {
-                      const { awayTeam, awayTeamScore, homeTeam, homeTeamScore, inProgress, time, aggScore, awayTeamLogo, homeTeamLogo, group, finalWinMessage, awayScorers, homeScorers } = match;
-                      // console.log(awayScorers);
-                      // console.log(homeScorers);
-  
-                      return (
-                        <motion.div
-                          key={index}
-                          initial={{ opacity: 0, scale: 0.8 }}
-                          animate={{ opacity: 1, scale: 1 }}
-                          variants={{
-                            initial: {
-                              opacity: 0,
-                            },
-                            animate: {
-                              opacity: 1,
-                            },
-                          }}
-                          transition={{
-                            type: "spring",
-                            stiffness: 260,
-                            damping: 20
-                          }}
-                        >
-                          <FootballMatchComp 
-                            key={index}
-                            awayTeam={awayTeam}
-                            awayTeamScore={awayTeamScore}
-                            homeTeam={homeTeam}
-                            homeTeamScore={homeTeamScore}
-                            inProgress={inProgress}
-                            time={time}
-                            aggScore={aggScore}
-                            awayTeamLogo={awayTeamLogo}
-                            homeTeamLogo={homeTeamLogo}
-                            group={group}
-                            finalWinMessage={finalWinMessage}
-                            awayScorers={awayScorers}
-                            homeScorers={homeScorers}
-                          />
-                        </motion.div>
-                      );
-                    })}
-                  </div>
-                </div>
-              );
-            })}
+                      {/* Matches */}
+                      <div className="grid lg:grid-cols-3 md:grid-cols-2 sm:grid-cols-1 gap-4 md:gap-8 max-w-7xl">
+                        {matches.map((match: FootballMatch, index) => {
+                          const { awayTeam, awayTeamScore, homeTeam, homeTeamScore, inProgress, time, aggScore, awayTeamLogo, homeTeamLogo, group, finalWinMessage, awayScorers, homeScorers } = match;
+                          // console.log(awayScorers);
+                          // console.log(homeScorers);
+      
+                          return (
+                            <motion.div
+                              key={index}
+                              initial={{ opacity: 0, scale: 0.8 }}
+                              animate={{ opacity: 1, scale: 1 }}
+                              variants={{
+                                initial: {
+                                  opacity: 0,
+                                },
+                                animate: {
+                                  opacity: 1,
+                                },
+                              }}
+                              transition={{
+                                type: "spring",
+                                stiffness: 260,
+                                damping: 20
+                              }}
+                            >
+                              <FootballMatchComp 
+                                key={index}
+                                awayTeam={awayTeam}
+                                awayTeamScore={awayTeamScore}
+                                homeTeam={homeTeam}
+                                homeTeamScore={homeTeamScore}
+                                inProgress={inProgress}
+                                time={time}
+                                aggScore={aggScore}
+                                awayTeamLogo={awayTeamLogo}
+                                homeTeamLogo={homeTeamLogo}
+                                group={group}
+                                finalWinMessage={finalWinMessage}
+                                awayScorers={awayScorers}
+                                homeScorers={homeScorers}
+                              />
+                            </motion.div>
+                          );
+                        })}
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            )}
           </div>
         </div>
       </main>
