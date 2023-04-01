@@ -191,12 +191,18 @@ export const footballRouter = createTRPCRouter({
     .input(z.object({ currentTab: z.string() }))
     .query(async ({ input }) => {
       const { currentTab } = input;
+      const start = Date.now();
       const siteToScrape = `https://www.bbc.com/sport/football/scores-fixtures/${currentTab}`;
-      const categories = await scrapeBbcSports(siteToScrape);
+      
+      // run both functions in parallel using Promise.all()
+      const [categories, newCategories] = await Promise.all([
+        scrapeBbcSports(siteToScrape),
+        scrapeBbcSports(siteToScrape).then(categories => appendScorers(categories, currentTab))
+      ]);
 
-      // append the scorers to the data 
-      // append the scorers to the match
-      const newCategories = await appendScorers(categories, currentTab);
+      console.log("Done scraping and adding scorers");
+      const timeTakenInSecs = (Date.now() - start) / 1000;
+      console.log(`Time taken: ${timeTakenInSecs} seconds`);
       return newCategories;
     }),
 });

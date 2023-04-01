@@ -319,74 +319,68 @@ export default function Football({ todaysData }: FootballProps) {
             </div>
           </div>
 
-          {isLoading && (
-            <div className="flex flex-col items-center justify-center gap-4 mt-8">
-              <h2 className="btn normal-case btn-ghost text-2xl font-bold text-white loading">Loading...</h2>
-            </div>
-          ) || (
-            <div>
-              {footballCategoryData.map((category, index) => {
-                const { heading, matches } = category;
+          <div>
+            {footballCategoryData.map((category, index) => {
+              const { heading, matches } = category;
 
-                return (
-                  <div key={index}>
-                    {/* Heading (international games, world cup, euros, friendlies, club friendlies, cups) */}
-                    {/* Make sure it wraps the text if its too large */}
-                    <div className="flex flex-col items-start justify-start">
-                      <h2 className="lg:text-2xl sm:text-1xl font-bold text-white mb-3 mt-7 hover:opacity-75 animate-pulse break-words whitespace-pre-wrap">{heading}</h2>
-                    </div>
-
-                    {/* Matches */}
-                    <div className="grid lg:grid-cols-3 md:grid-cols-2 sm:grid-cols-1 gap-4 md:gap-8 max-w-7xl">
-                      {matches.map((match: FootballMatch, index) => {
-                        const { awayTeam, awayTeamScore, homeTeam, homeTeamScore, inProgress, time, aggScore, awayTeamLogo, homeTeamLogo, group, finalWinMessage, awayScorers, homeScorers } = match;
-                        // console.log(awayScorers);
-                        // console.log(homeScorers);
-    
-                        return (
-                          <motion.div
-                            key={index}
-                            initial={{ opacity: 0, scale: 0.8 }}
-                            animate={{ opacity: 1, scale: 1 }}
-                            variants={{
-                              initial: {
-                                opacity: 0,
-                              },
-                              animate: {
-                                opacity: 1,
-                              },
-                            }}
-                            transition={{
-                              type: "spring",
-                              stiffness: 260,
-                              damping: 20
-                            }}
-                          >
-                            <FootballMatchComp 
-                              key={index}
-                              awayTeam={awayTeam}
-                              awayTeamScore={awayTeamScore}
-                              homeTeam={homeTeam}
-                              homeTeamScore={homeTeamScore}
-                              inProgress={inProgress}
-                              time={time}
-                              aggScore={aggScore}
-                              awayTeamLogo={awayTeamLogo}
-                              homeTeamLogo={homeTeamLogo}
-                              group={group}
-                              finalWinMessage={finalWinMessage}
-                              awayScorers={awayScorers}
-                              homeScorers={homeScorers}
-                            />
-                          </motion.div>
-                        );
-                      })}
-                    </div>
+              return (
+                <div key={index}>
+                  {/* Heading (international games, world cup, euros, friendlies, club friendlies, cups) */}
+                  {/* Make sure it wraps the text if its too large */}
+                  <div className="flex flex-col items-start justify-start">
+                    <h2 className="lg:text-2xl sm:text-1xl font-bold text-white mb-3 mt-7 hover:opacity-75 animate-pulse break-words whitespace-pre-wrap">{heading}</h2>
                   </div>
-                );
-              })}
-            </div>
-          )}
+
+                  {/* Matches */}
+                  <div className="grid lg:grid-cols-3 md:grid-cols-2 sm:grid-cols-1 gap-4 md:gap-8 max-w-7xl">
+                    {matches.map((match: FootballMatch, index) => {
+                      const { awayTeam, awayTeamScore, homeTeam, homeTeamScore, inProgress, time, aggScore, awayTeamLogo, homeTeamLogo, group, finalWinMessage, awayScorers, homeScorers } = match;
+                      // console.log(awayScorers);
+                      // console.log(homeScorers);
+  
+                      return (
+                        <motion.div
+                          key={index}
+                          initial={{ opacity: 0, scale: 0.8 }}
+                          animate={{ opacity: 1, scale: 1 }}
+                          variants={{
+                            initial: {
+                              opacity: 0,
+                            },
+                            animate: {
+                              opacity: 1,
+                            },
+                          }}
+                          transition={{
+                            type: "spring",
+                            stiffness: 260,
+                            damping: 20
+                          }}
+                        >
+                          <FootballMatchComp 
+                            key={index}
+                            awayTeam={awayTeam}
+                            awayTeamScore={awayTeamScore}
+                            homeTeam={homeTeam}
+                            homeTeamScore={homeTeamScore}
+                            inProgress={inProgress}
+                            time={time}
+                            aggScore={aggScore}
+                            awayTeamLogo={awayTeamLogo}
+                            homeTeamLogo={homeTeamLogo}
+                            group={group}
+                            finalWinMessage={finalWinMessage}
+                            awayScorers={awayScorers}
+                            homeScorers={homeScorers}
+                          />
+                        </motion.div>
+                      );
+                    })}
+                  </div>
+                </div>
+              );
+            })}
+          </div>
         </div>
       </main>
     </>

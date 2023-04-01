@@ -146,8 +146,6 @@ async function startPreviousDaysInterval() {
   const categories = await scrapeBbcWithCompleteLink(`https://www.bbc.co.uk/sport/football/scores-fixtures/${todaysDate}`);
   const newDataWithScorers = await appendScorers(categories, todaysDate);
   const toJson = JSON.stringify(newDataWithScorers);
-  console.log(todaysDate, "todays date");
-  console.log(toJson);
 
   await prisma.todaysMatches.upsert({
     where: {
