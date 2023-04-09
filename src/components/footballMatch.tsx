@@ -138,7 +138,7 @@ const FootballMatchComp = ({
               {awayScorers && awayScorers.length > 0 && awayScorers.map((scorer) => (
                 <li 
                   key={scorer[0]} 
-                  className="text-xs text-left w-12"
+                  className="text-xs text-right px-3"
                 >
                   {scorer[0]} <span className="text-green-400">{scorer[1].join(", ")}</span>
                 </li>
@@ -161,7 +161,7 @@ const FootballMatchComp = ({
               In progress
           </span>
         )}
-            
+      
         <span className="flex flex-col text-2xl w-full text-center">
           {aggScore && (
             <span className="text-[#f5a623] text-lg text-center w-full">
