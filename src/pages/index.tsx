@@ -23,8 +23,157 @@ type FootballLogoSearchResponse = {
     }[];
   }[];
 };
+interface FootballRoundData {
+  key: string,
+  name: {
+    first: string,
+    full: string,
+    abbreviation: string,
+  }
+}
 interface FootballProps {
   todaysData: Category[];
+}
+interface FootballEventData {
+  eventKey: string;
+  startTime: string;
+  isTBC: boolean;
+  minutesElapsed: number;
+  minutesIntoAddedTime: number | null;
+  eventStatus: string;
+  eventStatusNote: string;
+  eventStatusReason: string | null;
+  eventOutcomeType: string | null;
+  eventType: string;
+  seriesWinner: string | null;
+  cpsId: string;
+  cpsLive: string;
+  homeTeam: {
+    key: string;
+    scores: {
+      score: number;
+      halfTime: number;
+      fullTime: number;
+      extraTime: number | null;
+      shootout: number | null;
+      aggregate: number;
+      aggregateGoalsAway: number;
+    };
+    formation: null;
+    eventOutcome: string;
+    name: {
+      first: string;
+      full: string;
+      abbreviation: string;
+      last: string | null;
+    };
+    playerActions: {
+      actions: {
+        type: string;
+        timeElapsed: number;
+        addedTime: number;
+        penalty: boolean;
+        ownGoal: boolean;
+        displayTime: string;
+      }[];
+      name: {
+        first: string;
+        full: string;
+        abbreviation: string;
+        last: string;
+      };
+    }[];
+  };
+  awayTeam: {
+    key: string;
+    scores: {
+      score: number;
+      halfTime: number;
+      fullTime: number;
+      extraTime: number | null;
+      shootout: number | null;
+      aggregate: number;
+      aggregateGoalsAway: number;
+    };
+    formation: null;
+    eventOutcome: string;
+    name: {
+      first: string;
+      full: string;
+      abbreviation: string;
+      last: string | null;
+    };
+    playerActions: {
+      actions: {
+        type: string;
+        timeElapsed: number;
+        addedTime: number;
+        penalty: boolean;
+        ownGoal: boolean;
+        displayTime: string;
+      }[];
+      name: {
+        first: string;
+        full: string;
+        abbreviation: string;
+        last: string;
+      };
+    }[];
+  };
+  eventProgress: {
+    period: string;
+    status: string;
+  };
+  venue: {
+    name: {
+      abbreviation: string;
+      videCode: string;
+      first: string;
+      full: string;
+    };
+    homeCountry: string;
+  };
+  officials: string[];
+  tournamentInfo: null;
+  eventActions: null;
+  startTimeInUKHHMM: string;
+  comment: string | null;
+  href: string;
+  tournamentName: {
+    first: string;
+    full: string;
+    abbreviation: string;
+  };
+  tournamentSlug: string;
+}
+interface FootballResult {
+  meta: {
+    pollFrequencyInMilliseconds: number
+  }
+  payload: {
+    meta: string[],
+    body: {
+      fixtureListMeta: {
+        scorersButtonShouldBeEnabled: boolean
+      },
+      matchData: {
+        tournamentMeta: {
+          tournamentSlug: string,
+          tournamentName: {
+            first: string,
+            full: string,
+            abbreviation: string,
+          }
+        }
+        tournamentDatesWithEvents: {
+          [key: string]: {
+            round: FootballRoundData[],
+            events: FootballEventData[],
+          }[]
+        }
+      }[],
+    }
+  }[]
 }
 
 // categories that come first
@@ -235,16 +384,83 @@ function formulateTime(currentTab: string) {
 async function getApiData(currentTab: string) {
   const link = "https://push.api.bbci.co.uk/batch?t=/data/bbc-morph-football-scores-match-list-data/endDate/2023-04-19/startDate/2023-04-19/todayDate/2023-04-19/tournament/full-priority-order/version/2.4.6/withPlayerActions/true?timeout=5";
   const fetched = await axios.get(link);
-  const data = fetched.data as {
-    meta: string[];
-    payload: string[]
-  };
+  const data = fetched.data as FootballResult;
+  const returningData = [] as Category[];
+  const matchData = data.payload[0]?.body.matchData || [] as FootballResult['payload'][number]['body']['matchData'];
 
-  console.log(data);
+  matchData.map((match) => {
+    // Pickup the tournment name
+    const tournamentName = match.tournamentMeta.tournamentName.full;
+    const value = Object.values(match.tournamentDatesWithEvents)[0];
+    if (!value) {
+      return;
+    }
+    const tournamentData = value[0];
+    const events = tournamentData?.events;
+    // Go through the events
+    events?.map((event) => {
+      const fullHomeTeamName = event.homeTeam.name.full;
+      const fullAwayTeamName = event.awayTeam.name.full;
+      
+      const fullTimeHomeScore = event.homeTeam.scores.fullTime ? event.homeTeam.scores.fullTime.toString() : "0";
+      const fullTimeAwayScore = event.awayTeam.scores.fullTime ? event.awayTeam.scores.fullTime.toString() : "0";
+      const aggScoreHome =  event.homeTeam.scores.aggregate ? event.homeTeam.scores.aggregate.toString() : "0";
+      const aggScoreAway = event.awayTeam.scores.aggregate ? event.awayTeam.scores.aggregate.toString() : "0";
+
+      const time = event.minutesElapsed ? event.minutesElapsed.toString() : "0";
+      const inProgress = event.eventStatus == "mid-event";
+      const cancelled = event.eventStatus == "canceled";
+
+      const homeScorers = [] as string[];
+      const awayScorers = [] as string[];
+
+      event.homeTeam.playerActions && event.homeTeam.playerActions.length > 0 && event.homeTeam.playerActions.map((playerAction) => {
+        if (playerAction.actions[0]?.type == "goal") {
+          homeScorers.push(playerAction.name.full);
+        }
+      });
+      event.awayTeam.playerActions && event.awayTeam.playerActions.length > 0 && event.awayTeam.playerActions.map((playerAction) => {
+        if (playerAction.actions[0]?.type == "goal") {
+          awayScorers.push(playerAction.name.full);
+        }
+      });
+
+      // push to final
+      returningData.push({
+        heading: tournamentName,
+        matches: [{
+          homeTeam: fullHomeTeamName,
+          awayTeam: fullAwayTeamName,
+          homeTeamScore: fullTimeHomeScore,
+          awayTeamScore: fullTimeAwayScore,
+          aggScore: `${aggScoreHome} - ${aggScoreAway}`,
+          time,
+          inProgress,
+          cancelled,
+          homeScorers,
+          awayScorers,
+        }],
+      });
+    });
+  });
+
+  // make sure there are not duplicate tournament names, and matches with the same tournament name are in the same category
+  const newReturningData = [] as Category[];
+  returningData.map((category) => {
+    const index = newReturningData.findIndex((newCategory) => newCategory.heading === category.heading);
+    if (index === -1) {
+      newReturningData.push(category);
+    } else {
+      newReturningData[index]?.matches.push(...category.matches);
+    }
+  });
+
+  // console.log(newReturningData);
+  return newReturningData;
 }
 
 export default function Football({ }: FootballProps) {
-  const [currentTab, setCurrentTab] = useState("");
+  const [currentTab, setCurrentTab] = useState("Today");
   // const countForToday = todaysData.reduce((acc, category) => acc + category.matches.length, 0);
 
   // set football categories for the current tab
@@ -260,6 +476,7 @@ export default function Football({ }: FootballProps) {
     // const processedData = await processAndApplyData(newCategories);
     const test = await getApiData(currentTab);
     console.log(test);
+    setFootballCategoryData(test);
 
     // console.log(processedData);
     // setFootballCategoryData(processedData);

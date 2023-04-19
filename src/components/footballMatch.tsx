@@ -86,13 +86,12 @@ const FootballMatchComp = ({
 
             <ul className="min-h-10">
               {homeScorers && homeScorers.length > 0 && homeScorers.map((scorer) => {
-                const [name, ...rest] = scorer[1] || [];
                 return (
                   <li 
-                    key={scorer[0]} 
+                    key={scorer} 
                     className="text-xs text-left break-words"
                   >
-                    {scorer[0]} <span className="text-green-400">{name}</span>
+                    {scorer} <span className="text-green-400"></span>
                   </li>
                 );
               })}
@@ -139,13 +138,12 @@ const FootballMatchComp = ({
 
             <ul className="min-h-10">
               {awayScorers && awayScorers.length > 0 && awayScorers.map((scorer) => {
-                const [name, ...rest] = scorer[1] || [];
                 return (
                   <li
-                    key={scorer[0]}
+                    key={scorer}
                     className="text-xs text-right break-words"
                   >
-                    {scorer[0]} <span className="text-green-400">{name}</span>
+                    {scorer} <span className="text-green-400"></span>
                   </li>
                 );
               })}
