@@ -353,30 +353,37 @@ async function getApiData(currentTab: string) {
     const tournamentData = value[0];
     const events = tournamentData?.events;
     // Go through the events
-    events?.map((event) => {
+    if (!events) return;
+
+    events.map((event) => {
       const fullHomeTeamName = event.homeTeam.name.full;
       const fullAwayTeamName = event.awayTeam.name.full;
       
       const fullTimeHomeScore = event.homeTeam.scores.fullTime ? event.homeTeam.scores.fullTime.toString() : "0";
       const fullTimeAwayScore = event.awayTeam.scores.fullTime ? event.awayTeam.scores.fullTime.toString() : "0";
-      const aggScoreHome =  event.homeTeam.scores.aggregate ? event.homeTeam.scores.aggregate.toString() : "0";
-      const aggScoreAway = event.awayTeam.scores.aggregate ? event.awayTeam.scores.aggregate.toString() : "0";
+      const aggScoreHome =  event.homeTeam.scores.aggregate ? event.homeTeam.scores.aggregate.toString() : null;
+      const aggScoreAway = event.awayTeam.scores.aggregate ? event.awayTeam.scores.aggregate.toString() : null;
 
       const time = event.minutesElapsed ? event.minutesElapsed.toString() : "0";
       const inProgress = event.eventStatus == "mid-event";
       const cancelled = event.eventStatus == "canceled";
+      const fullTime = event.eventStatus == "post-event";
 
-      const homeScorers = [] as string[];
-      const awayScorers = [] as string[];
+      const homeScorers = new Map<string, string[]>([]);
+      const awayScorers = new Map<string, string[]>([]);
 
       event.homeTeam.playerActions && event.homeTeam.playerActions.length > 0 && event.homeTeam.playerActions.map((playerAction) => {
         if (playerAction.actions[0]?.type == "goal") {
-          homeScorers.push(playerAction.name.full);
+          const fullName = playerAction.name.full;
+          const timeScored = playerAction.actions[0].displayTime;
+          homeScorers.set(fullName, [timeScored]);
         }
       });
       event.awayTeam.playerActions && event.awayTeam.playerActions.length > 0 && event.awayTeam.playerActions.map((playerAction) => {
         if (playerAction.actions[0]?.type == "goal") {
-          awayScorers.push(playerAction.name.full);
+          const fullName = playerAction.name.full;
+          const timeScored = playerAction.actions[0].displayTime;
+          awayScorers.set(fullName, [timeScored]);
         }
       });
 
@@ -388,12 +395,13 @@ async function getApiData(currentTab: string) {
           awayTeam: fullAwayTeamName,
           homeTeamScore: fullTimeHomeScore,
           awayTeamScore: fullTimeAwayScore,
-          aggScore: `${aggScoreHome} - ${aggScoreAway}`,
+          aggScore: aggScoreHome && aggScoreAway ? `Agg: ${aggScoreHome} - ${aggScoreAway}` : null,
           time,
           inProgress,
           cancelled,
-          homeScorers,
-          awayScorers,
+          fullTime,
+          homeScorers: Array.from(homeScorers || []),
+          awayScorers: Array.from(awayScorers || []),
         }],
       });
     });
@@ -411,8 +419,6 @@ async function getApiData(currentTab: string) {
   });
 
   const processData = processAndApplyData(newReturningData);
-
-  // console.log(newReturningData);
   return processData;
 }
 
@@ -526,7 +532,7 @@ export default function Football({ }: FootballProps) {
               })}
             </div>
           </div>
-
+              
           <div>
             {isLoading ? (
               <div className="flex flex-col items-center justify-center gap-3">
@@ -548,7 +554,7 @@ export default function Football({ }: FootballProps) {
                       {/* Matches */}
                       <div className="grid lg:grid-cols-3 md:grid-cols-2 sm:grid-cols-1 gap-4 md:gap-8 max-w-7xl">
                         {matches.map((match: FootballMatch, index) => {
-                          const { awayTeam, awayTeamScore, homeTeam, homeTeamScore, inProgress, time, aggScore, awayTeamLogo, homeTeamLogo, group, finalWinMessage, awayScorers, homeScorers } = match;
+                          // const { awayTeam, awayTeamScore, homeTeam, homeTeamScore, inProgress, time, aggScore, awayTeamLogo, homeTeamLogo, group, finalWinMessage, awayScorers, homeScorers } = match;
                           // console.log(awayScorers);
                           // console.log(homeScorers);
       
@@ -573,19 +579,7 @@ export default function Football({ }: FootballProps) {
                             >
                               <FootballMatchComp 
                                 key={index}
-                                awayTeam={awayTeam}
-                                awayTeamScore={awayTeamScore}
-                                homeTeam={homeTeam}
-                                homeTeamScore={homeTeamScore}
-                                inProgress={inProgress}
-                                time={time}
-                                aggScore={aggScore}
-                                awayTeamLogo={awayTeamLogo}
-                                homeTeamLogo={homeTeamLogo}
-                                group={group}
-                                finalWinMessage={finalWinMessage}
-                                awayScorers={awayScorers}
-                                homeScorers={homeScorers}
+                                data={match}
                               />
                             </motion.div>
                           );

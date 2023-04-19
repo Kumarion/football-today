@@ -38,27 +38,34 @@ function getActualTime(team: string, time: string) {
 }
 
 const FootballMatchComp = ({
-  homeTeam,
-  awayTeam,
-  homeTeamScore,
-  awayTeamScore,
-  homeTeamLogo,
-  awayTeamLogo,
-  time,
-  group,
-  aggScore,
-  inProgress,
-  finalWinMessage,
-  awayScorers,
-  homeScorers,
-}: FootballMatch) => {
+  data
+}: {
+  data: FootballMatch;
+}) => {
+  const {
+    homeTeam,
+    awayTeam,
+    homeTeamScore,
+    awayTeamScore,
+    homeTeamLogo,
+    awayTeamLogo,
+    time,
+    group,
+    aggScore,
+    inProgress,
+    finalWinMessage,
+    awayScorers,
+    homeScorers,
+    fullTime,
+  } = data;
+  
   return (
     <div
       key = {`${homeTeam} + ${awayTeam}`} // index for now until we get ids
       className="flex max-w-xs flex-col gap-4 rounded-xl bg-white/10 p-4 text-white hover:bg-white/20"
     >
       <div className="flex-row gap-3">
-        {homeTeamScore == "" && awayTeamScore == "" && (
+        {fullTime && (
           <h1 className="text-blue-400 text-xl text-center mb-4">
               Not started
           </h1>
@@ -88,10 +95,10 @@ const FootballMatchComp = ({
               {homeScorers && homeScorers.length > 0 && homeScorers.map((scorer) => {
                 return (
                   <li 
-                    key={scorer} 
+                    key={scorer[0]} 
                     className="text-xs text-left break-words"
                   >
-                    {scorer} <span className="text-green-400"></span>
+                    {scorer[0]} <span className="text-green-400">{scorer[1]}</span>
                   </li>
                 );
               })}
@@ -140,17 +147,16 @@ const FootballMatchComp = ({
               {awayScorers && awayScorers.length > 0 && awayScorers.map((scorer) => {
                 return (
                   <li
-                    key={scorer}
+                    key={scorer[0]}
                     className="text-xs text-right break-words"
                   >
-                    {scorer} <span className="text-green-400"></span>
+                    {scorer[0]} <span className="text-green-400">{scorer[1]}</span>
                   </li>
                 );
               })}
             </ul>
           </div>
         </div>
-            
       </div>
           
       <div className="grid justify-center mt-4 gap-1 w-full">
@@ -179,14 +185,9 @@ const FootballMatchComp = ({
             </span>
           )}
 
-          {homeTeamScore == "" && awayTeamScore == "" && (
-            <span className="text-2xl">
-              {getActualTime(homeTeam, time)}
-            </span>
-          ) || (
-            <span className="text-3xl text-center w-full font-mono">
-              {/* remove spaces */}
-              {time.replace(/\s/g, "")}
+          {fullTime && (
+            <span className="text-2xl normal-case text-green-400">
+              Full time
             </span>
           )}
         </span>

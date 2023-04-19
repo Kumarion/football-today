@@ -61,8 +61,9 @@ export interface Category {
     cancelled?: boolean;
     group?: string;
     finalWinMessage?: string | null;
-    homeScorers?: string[];
-    awayScorers?: string[];
+    fullTime: boolean;
+    homeScorers?: [string, string[]][];
+    awayScorers?: [string, string[]][];
   }[];
 }
 
