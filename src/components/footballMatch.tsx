@@ -110,7 +110,7 @@ const FootballMatchComp = ({
                   -
               </span>
             </div>
-
+                
             <div>
               <span className="text-4xl font-bold">
                 {STATUS[status] === "Live" || STATUS[status] === "Full time" ? awayTeamScore : ""}
