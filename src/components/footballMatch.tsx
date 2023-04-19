@@ -1,41 +1,32 @@
 import { format } from "date-fns";
-import { getTimezoneOffset, zonedTimeToUtc } from "date-fns-tz";
+import { zonedTimeToUtc } from "date-fns-tz";
 import Image from "next/image";
 
-// import type { RouterOutputs } from "~/utils/api";
 import type { Category } from "~/helpers/scrapeBbcSports";
 type FootballMatch = Category["matches"][0] & {
     homeTeamLogo?: string;
     awayTeamLogo?: string;
 };
 
-function getActualTime(team: string, time: string) {
+function getActualTime(time: string) {
   // the time is in UK and 24 hours format, we need to convert it to the user's timezone and 12 hours format
   if (time == "") {
     return time;
   }
-
-  const newTime = new Date();
-  const [hours, minutes] = time.split(":");
-
-  if (!hours || !minutes) {
-    return time;
-  }
-
-  newTime.setHours(parseInt(hours));
-  newTime.setMinutes(parseInt(minutes));
-
-  // get current timezone for the user
-  const timezone = Intl.DateTimeFormat().resolvedOptions().timeZone;
-  const utcTime = zonedTimeToUtc(newTime, timezone);
   
-  // get offset of the timezone to london
-  const offsetInMs = getTimezoneOffset(timezone, utcTime);
-  const offsetInHours = offsetInMs / 1000 / 60 / 60;
+  // get their timezone
+  const timezone = Intl.DateTimeFormat().resolvedOptions().timeZone;
 
-  newTime.setHours(newTime.getHours() + offsetInHours - 1);
+  // convert the time to their timezone
+  const newTime = zonedTimeToUtc(time, timezone);
   return format(newTime, "h:mm a");
 }
+
+const STATUS = {
+  "post-event": "Full time",
+  "in-play": "Live",
+  "pre-event": "Not started",
+} as { [key: string]: string };
 
 const FootballMatchComp = ({
   data
@@ -49,14 +40,16 @@ const FootballMatchComp = ({
     awayTeamScore,
     homeTeamLogo,
     awayTeamLogo,
-    time,
+    currentTime,
+    dateStarting,
     group,
     aggScore,
-    inProgress,
-    finalWinMessage,
+    // inProgress,
+    // finalWinMessage,
     awayScorers,
     homeScorers,
     fullTime,
+    status,
   } = data;
   
   return (
@@ -108,19 +101,19 @@ const FootballMatchComp = ({
           <div className="flex flex-row justify-center items-center gap-2 mb-10 h-full">
             <div>
               <span className="text-4xl font-bold">
-                {homeTeamScore}
+                {STATUS[status] === "Live" || STATUS[status] === "Full time" ? homeTeamScore : ""}
               </span>
             </div>
 
             <div>
               <span className="text-4xl font-mono">
-                    -
+                  -
               </span>
             </div>
 
             <div>
               <span className="text-4xl font-bold">
-                {awayTeamScore}
+                {STATUS[status] === "Live" || STATUS[status] === "Full time" ? awayTeamScore : ""}
               </span>
             </div>
           </div>
@@ -166,12 +159,6 @@ const FootballMatchComp = ({
           </span>
         )}
 
-        {inProgress && (
-          <span className="text-[#f5a623] text-lg text-center w-full">
-              In progress
-          </span>
-        )}
-      
         <span className="flex flex-col text-2xl w-full text-center">
           {aggScore && (
             <span className="text-[#f5a623] text-lg text-center w-full">
@@ -179,15 +166,13 @@ const FootballMatchComp = ({
             </span>
           )}
 
-          {finalWinMessage && (
-            <span className="text-green-400 text-lg text-center w-full">
-              {finalWinMessage}
-            </span>
-          )}
-
-          {fullTime && (
+          {STATUS[status] && STATUS[status] !== "Not started" ? (
             <span className="text-2xl normal-case text-green-400">
-              Full time
+              {STATUS[status]}
+            </span>
+          ) : (
+            <span className="text-2xl normal-case text-green-400">
+              {getActualTime(dateStarting)}
             </span>
           )}
         </span>

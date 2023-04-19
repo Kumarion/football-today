@@ -364,10 +364,12 @@ async function getApiData(currentTab: string) {
       const aggScoreHome =  event.homeTeam.scores.aggregate ? event.homeTeam.scores.aggregate.toString() : null;
       const aggScoreAway = event.awayTeam.scores.aggregate ? event.awayTeam.scores.aggregate.toString() : null;
 
-      const time = event.minutesElapsed ? event.minutesElapsed.toString() : "0";
+      const currentTime = event.minutesElapsed ? event.minutesElapsed.toString() : "0";
+      const dateStarting = event.startTime;
       const inProgress = event.eventStatus == "mid-event";
       const cancelled = event.eventStatus == "canceled";
       const fullTime = event.eventStatus == "post-event";
+      const status = event.eventStatus;
 
       const homeScorers = new Map<string, string[]>([]);
       const awayScorers = new Map<string, string[]>([]);
@@ -396,10 +398,12 @@ async function getApiData(currentTab: string) {
           homeTeamScore: fullTimeHomeScore,
           awayTeamScore: fullTimeAwayScore,
           aggScore: aggScoreHome && aggScoreAway ? `Agg: ${aggScoreHome} - ${aggScoreAway}` : null,
-          time,
+          currentTime,
+          dateStarting,
           inProgress,
           cancelled,
           fullTime,
+          status,
           homeScorers: Array.from(homeScorers || []),
           awayScorers: Array.from(awayScorers || []),
         }],

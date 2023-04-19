@@ -55,13 +55,15 @@ export interface Category {
     awayTeam: string;
     homeTeamScore: string;
     awayTeamScore: string;
-    time: string;
+    currentTime: string;
+    dateStarting: string;
     inProgress: boolean;
     aggScore?: string | null;
     cancelled?: boolean;
     group?: string;
     finalWinMessage?: string | null;
     fullTime: boolean;
+    status: string;
     homeScorers?: [string, string[]][];
     awayScorers?: [string, string[]][];
   }[];

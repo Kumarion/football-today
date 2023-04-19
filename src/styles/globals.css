@@ -13,7 +13,7 @@
   
   /* For Chrome, Safari, and Opera */
   ::-webkit-scrollbar-thumb {
-    background-color: rgba(86, 62, 93, 0.8);
+    background-color: rgba(86, 62, 93, 0.5);
   }
   
   /* For Firefox */
@@ -29,16 +29,3 @@
   scrollbar-thumb {
     background-color: rgba(86, 62, 93, 0.5);
   }
-  
-  /* ::-webkit-scrollbar {
-    background-color: transparent;
-    opacity: calc(0.5 * var(--tw-bg-opacity));
-    width: 10px;
-    border-radius: 10px;
-  }
-  
-  
-  ::-webkit-scrollbar-thumb {
-    background-color: black;
-    border-radius: 10px;
-  } */
