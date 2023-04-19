@@ -428,51 +428,24 @@ async function getApiData(currentTab: string) {
 
 export default function Football({ }: FootballProps) {
   const [currentTab, setCurrentTab] = useState("Today");
-  // const countForToday = todaysData.reduce((acc, category) => acc + category.matches.length, 0);
 
   // set football categories for the current tab
   const [footballCategoryData, setFootballCategoryData] = useState<Category[]>([]);
   const countForToday = footballCategoryData.reduce((acc, category) => acc + category.matches.length, 0);
 
-  async function test() {
-    // const siteToScrape = `https://www.bbc.com/sport/football/scores-fixtures/${currentTab}`;
-    // const categories = await scrapeBbcSports(siteToScrape) as Category[];
-    // console.log(categories);
-    // const newCategories = await appendScorers(categories, currentTab) as unknown as Category[];
-    // console.log(newCategories);
-    // const processedData = await processAndApplyData(newCategories);
+  async function processApi() {
     const test = await getApiData(currentTab);
     console.log(test);
     setFootballCategoryData(test);
-
-    // console.log(processedData);
-    // setFootballCategoryData(processedData);
   }
 
   const isLoading = footballCategoryData.length === 0;
 
-  // const { isLoading, refetch } = api.football.getCurrentFootballMatches.useQuery({ currentTab: formulateTime(currentTab) }, {
-  //   // refetch every 10 seconds
-  //   // not sure how efficient this is, but it's a start
-  //   enabled: true,
-  //   refetchInterval: 5000,
-  //   refetchOnWindowFocus: true,
-  //   onSuccess: (data) => {
-  //     console.log("success");
-  //     void processAndApplyData(data).then((processedData) => {
-  //       setFootballCategoryData(processedData);
-  //     });
-  //     console.log(data);
-  //   }
-  // });
-
   useEffect(() => {
-    void test();
+    void processApi();
   }, [currentTab]);
 
   const setTab = (tab: string) => {
-    // void refetch();
-    // void test();
     setCurrentTab(tab);
   };
 

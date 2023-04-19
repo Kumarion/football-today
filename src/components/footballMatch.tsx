@@ -175,6 +175,12 @@ const FootballMatchComp = ({
               {getActualTime(dateStarting)}
             </span>
           )}
+
+          {STATUS[status] === "Live" && (
+            <span className="text-2xl normal-case text-green-400">
+              {currentTime}
+            </span>
+          )}
         </span>
       </div>
     </div>
