@@ -2,8 +2,9 @@ import { format } from "date-fns";
 import { getTimezoneOffset, zonedTimeToUtc } from "date-fns-tz";
 import Image from "next/image";
 
-import type { RouterOutputs } from "~/utils/api";
-type FootballMatch = RouterOutputs["football"]["getCurrentFootballMatches"][0]["matches"][0] & {
+// import type { RouterOutputs } from "~/utils/api";
+import type { Category } from "~/helpers/scrapeBbcSports";
+type FootballMatch = Category["matches"][0] & {
     homeTeamLogo?: string;
     awayTeamLogo?: string;
 };
@@ -35,7 +36,6 @@ function getActualTime(team: string, time: string) {
   newTime.setHours(newTime.getHours() + offsetInHours - 1);
   return format(newTime, "h:mm a");
 }
-
 
 const FootballMatchComp = ({
   homeTeam,
@@ -85,14 +85,17 @@ const FootballMatchComp = ({
             </div>
 
             <ul className="min-h-10">
-              {homeScorers && homeScorers.length > 0 && homeScorers.map((scorer) => (
-                <li 
-                  key={scorer[0]} 
-                  className="text-xs text-left break-words"
-                >
-                  {scorer[0]} <span className="text-green-400">{scorer[1].join(", ")}</span>
-                </li>
-              ))}
+              {homeScorers && homeScorers.length > 0 && homeScorers.map((scorer) => {
+                const [name, ...rest] = scorer[1] || [];
+                return (
+                  <li 
+                    key={scorer[0]} 
+                    className="text-xs text-left break-words"
+                  >
+                    {scorer[0]} <span className="text-green-400">{name}</span>
+                  </li>
+                );
+              })}
             </ul>
           </div>
               
@@ -135,14 +138,17 @@ const FootballMatchComp = ({
             </div>
 
             <ul className="min-h-10">
-              {awayScorers && awayScorers.length > 0 && awayScorers.map((scorer) => (
-                <li 
-                  key={scorer[0]} 
-                  className="text-xs text-right px-3"
-                >
-                  {scorer[0]} <span className="text-green-400">{scorer[1].join(", ")}</span>
-                </li>
-              ))}
+              {awayScorers && awayScorers.length > 0 && awayScorers.map((scorer) => {
+                const [name, ...rest] = scorer[1] || [];
+                return (
+                  <li
+                    key={scorer[0]}
+                    className="text-xs text-right break-words"
+                  >
+                    {scorer[0]} <span className="text-green-400">{name}</span>
+                  </li>
+                );
+              })}
             </ul>
           </div>
         </div>
