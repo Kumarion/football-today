@@ -1,21 +1,20 @@
 import Head from "next/head";
-import useGetAllFootballMatches from "~/hooks/useGetAllFootballMatches";
 import { useEffect, useState } from "react";
 import { format } from "date-fns";
 
 import FootballMatchComp from "~/components/footballMatch";
 import { motion } from "framer-motion";
 
-import type { RouterOutputs } from "~/utils/api";
 import DateTab from "~/components/dateTab";
 import { categoriesToComeFirst } from "~/helpers/footballCategoriesAlgorithm";
-import { PrismaClient } from "@prisma/client";
-import { api } from "~/utils/api";
-type FootballMatch = RouterOutputs["football"]["getCurrentFootballMatches"][0]["matches"][0] & {
+import { scrapeBbcSports } from "~/helpers/scrapeBbcSports";
+import { appendScorers } from "~/helpers/scrapeBbcSports";
+
+import type { Category } from "~/helpers/scrapeBbcSports";
+type FootballMatch = Category["matches"][0] & {
   homeTeamLogo?: string;
   awayTeamLogo?: string;
 };
-type FootballCategory = RouterOutputs["football"]["getCurrentFootballMatches"][0];
 type FootballLogoSearchResponse = {
   teams: {
     images: {
@@ -24,14 +23,14 @@ type FootballLogoSearchResponse = {
   }[];
 };
 interface FootballProps {
-  todaysData: FootballCategory[];
+  todaysData: Category[];
 }
 
 // categories that come first
 // if not in this list, they will be sorted alphabetically
 // an algorithm will sort the categories by what is most popular, as listed here
 
-function sortCategories(a: FootballCategory, b: FootballCategory) {
+function sortCategories(a: Category, b: Category) {
   const aIndex = categoriesToComeFirst.indexOf(a.heading);
   const bIndex = categoriesToComeFirst.indexOf(b.heading);
 
@@ -124,7 +123,7 @@ async function searchLogo(teamName: string): Promise<string> {
   return firstImage.url;
 }
 
-function processAndApplyData(data: FootballCategory[]) {
+function processAndApplyData(data: Category[]) {
   const sortedCategories = data.sort(sortCategories);
 
   // work with each category
@@ -159,48 +158,48 @@ function processAndApplyData(data: FootballCategory[]) {
   return Promise.all(appendImagesToFinalSortedData);
 }
 
-export const getStaticProps = async () => {
-  const prismaClient = new PrismaClient();
+// export const getStaticProps = async () => {
+//   const prismaClient = new PrismaClient();
 
-  const todaysData = await prismaClient.todaysMatches.findUnique({
-    where: {
-      date: new Date().toISOString().split("T")[0] as string,
-    },
-    select: {
-      fixtureData: true,
-    },
-  });
+//   const todaysData = await prismaClient.todaysMatches.findUnique({
+//     where: {
+//       date: new Date().toISOString().split("T")[0] as string,
+//     },
+//     select: {
+//       fixtureData: true,
+//     },
+//   });
 
-  if (!todaysData) {
-    return {
-      props: {
-        todaysData: [],
-      },
-    };
-  }
+//   if (!todaysData) {
+//     return {
+//       props: {
+//         todaysData: [],
+//       },
+//     };
+//   }
 
-  const parsedData = JSON.parse(todaysData.fixtureData as string) as FootballCategory[];
+//   const parsedData = JSON.parse(todaysData.fixtureData as string) as FootballCategory[];
 
-  // sort 
-  const sortedCategories = parsedData.sort(sortCategories);
+//   // sort 
+//   const sortedCategories = parsedData.sort(sortCategories);
 
-  // // work with each category
-  const newSortedData = sortedCategories.map((category) => {
-    // sort the matches
-    const sortedMatches = category.matches.sort(sortByInProgress);
+//   // // work with each category
+//   const newSortedData = sortedCategories.map((category) => {
+//     // sort the matches
+//     const sortedMatches = category.matches.sort(sortByInProgress);
     
-    return {
-      ...category,
-      matches: sortedMatches,
-    };
-  });
+//     return {
+//       ...category,
+//       matches: sortedMatches,
+//     };
+//   });
 
-  return {
-    props: {
-      todaysData: newSortedData,
-    },
-  };
-};
+//   return {
+//     props: {
+//       todaysData: newSortedData,
+//     },
+//   };
+// };
 
 function formulateTime(currentTab: string) {
   let date: Date;
@@ -232,30 +231,50 @@ function formulateTime(currentTab: string) {
   return newDate;
 }
 
-export default function Football({ todaysData }: FootballProps) {
-  const [currentTab, setCurrentTab] = useState("Today");
-  const countForToday = todaysData.reduce((acc, category) => acc + category.matches.length, 0);
+export default function Football({ }: FootballProps) {
+  const [currentTab, setCurrentTab] = useState("");
+  // const countForToday = todaysData.reduce((acc, category) => acc + category.matches.length, 0);
 
   // set football categories for the current tab
-  const [footballCategoryData, setFootballCategoryData] = useState<FootballCategory[]>(todaysData);
+  const [footballCategoryData, setFootballCategoryData] = useState<Category[]>([]);
+  const countForToday = footballCategoryData.reduce((acc, category) => acc + category.matches.length, 0);
 
-  const { isLoading, refetch } = api.football.getCurrentFootballMatches.useQuery({ currentTab: formulateTime(currentTab) }, {
-    // refetch every 10 seconds
-    // not sure how efficient this is, but it's a start
-    enabled: true,
-    refetchInterval: 5000,
-    refetchOnWindowFocus: true,
-    onSuccess: (data) => {
-      console.log("success");
-      void processAndApplyData(data).then((processedData) => {
-        setFootballCategoryData(processedData);
-      });
-      console.log(data);
-    }
-  });
+  async function test() {
+    const siteToScrape = `https://www.bbc.com/sport/football/scores-fixtures/${currentTab}`;
+    const categories = await scrapeBbcSports(siteToScrape) as Category[];
+    console.log(categories);
+    const newCategories = await appendScorers(categories, currentTab) as unknown as Category[];
+    console.log(newCategories);
+    const processedData = await processAndApplyData(newCategories);
+
+    console.log(processedData);
+    setFootballCategoryData(processedData);
+  }
+
+  const isLoading = footballCategoryData.length === 0;
+
+  // const { isLoading, refetch } = api.football.getCurrentFootballMatches.useQuery({ currentTab: formulateTime(currentTab) }, {
+  //   // refetch every 10 seconds
+  //   // not sure how efficient this is, but it's a start
+  //   enabled: true,
+  //   refetchInterval: 5000,
+  //   refetchOnWindowFocus: true,
+  //   onSuccess: (data) => {
+  //     console.log("success");
+  //     void processAndApplyData(data).then((processedData) => {
+  //       setFootballCategoryData(processedData);
+  //     });
+  //     console.log(data);
+  //   }
+  // });
+
+  useEffect(() => {
+    void test();
+  }, [currentTab]);
 
   const setTab = (tab: string) => {
-    void refetch();
+    // void refetch();
+    // void test();
     setCurrentTab(tab);
   };
 
