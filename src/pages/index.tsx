@@ -7,8 +7,6 @@ import { motion } from "framer-motion";
 
 import DateTab from "~/components/dateTab";
 import { categoriesToComeFirst } from "~/helpers/footballCategoriesAlgorithm";
-import { scrapeBbcSports } from "~/helpers/scrapeBbcSports";
-import { appendScorers } from "~/helpers/scrapeBbcSports";
 import axios from "axios";
 
 import type { Category } from "~/helpers/scrapeBbcSports";
@@ -176,6 +174,10 @@ interface FootballResult {
   }[]
 }
 
+export const GET_LINK = (date: string) => {
+  return `https://push.api.bbci.co.uk/batch?t=/data/bbc-morph-football-scores-match-list-data/endDate/${date}/startDate/${date}/todayDate/${date}/tournament/full-priority-order/version/2.4.6/withPlayerActions/true?timeout=5`;
+};
+
 // categories that come first
 // if not in this list, they will be sorted alphabetically
 // an algorithm will sort the categories by what is most popular, as listed here
@@ -198,7 +200,6 @@ function sortCategories(a: Category, b: Category) {
 
   return aIndex - bIndex;
 }
-
 function sortByInProgress(a: FootballMatch, b: FootballMatch) {
   // Needs to be sorted like so
   // 1. In progress
@@ -220,7 +221,6 @@ function sortByInProgress(a: FootballMatch, b: FootballMatch) {
 
   return 0;
 }
-
 function formulateTabs() {
   // create tabs including TODAYs date and up to 7 days
   const tabs = [];
@@ -248,7 +248,6 @@ function formulateTabs() {
 
   return tabs;
 }
-
 async function searchLogo(teamName: string): Promise<string> {
   // check cache
   const cached = localStorage.getItem(teamName);
@@ -272,7 +271,6 @@ async function searchLogo(teamName: string): Promise<string> {
 
   return firstImage.url;
 }
-
 function processAndApplyData(data: Category[]) {
   const sortedCategories = data.sort(sortCategories);
 
@@ -286,7 +284,6 @@ function processAndApplyData(data: Category[]) {
       matches: sortedMatches,
     };
   });
-
   const appendImagesToFinalSortedData = newSortedData.map(async (category) => {
     const newMatches = await Promise.all(category.matches.map(async (match: FootballMatch) => {
       const homeTeamLogo = await searchLogo(match.homeTeam);
@@ -307,49 +304,6 @@ function processAndApplyData(data: Category[]) {
   
   return Promise.all(appendImagesToFinalSortedData);
 }
-
-// export const getStaticProps = async () => {
-//   const prismaClient = new PrismaClient();
-
-//   const todaysData = await prismaClient.todaysMatches.findUnique({
-//     where: {
-//       date: new Date().toISOString().split("T")[0] as string,
-//     },
-//     select: {
-//       fixtureData: true,
-//     },
-//   });
-
-//   if (!todaysData) {
-//     return {
-//       props: {
-//         todaysData: [],
-//       },
-//     };
-//   }
-
-//   const parsedData = JSON.parse(todaysData.fixtureData as string) as FootballCategory[];
-
-//   // sort 
-//   const sortedCategories = parsedData.sort(sortCategories);
-
-//   // // work with each category
-//   const newSortedData = sortedCategories.map((category) => {
-//     // sort the matches
-//     const sortedMatches = category.matches.sort(sortByInProgress);
-    
-//     return {
-//       ...category,
-//       matches: sortedMatches,
-//     };
-//   });
-
-//   return {
-//     props: {
-//       todaysData: newSortedData,
-//     },
-//   };
-// };
 
 function formulateTime(currentTab: string) {
   let date: Date;
@@ -382,7 +336,8 @@ function formulateTime(currentTab: string) {
 }
 
 async function getApiData(currentTab: string) {
-  const link = "https://push.api.bbci.co.uk/batch?t=/data/bbc-morph-football-scores-match-list-data/endDate/2023-04-19/startDate/2023-04-19/todayDate/2023-04-19/tournament/full-priority-order/version/2.4.6/withPlayerActions/true?timeout=5";
+  const date = formulateTime(currentTab);
+  const link = GET_LINK(date);
   const fetched = await axios.get(link);
   const data = fetched.data as FootballResult;
   const returningData = [] as Category[];
@@ -455,8 +410,10 @@ async function getApiData(currentTab: string) {
     }
   });
 
+  const processData = processAndApplyData(newReturningData);
+
   // console.log(newReturningData);
-  return newReturningData;
+  return processData;
 }
 
 export default function Football({ }: FootballProps) {
