@@ -9,6 +9,7 @@ import DateTab from "~/components/dateTab";
 import { categoriesToComeFirst } from "~/helpers/footballCategoriesAlgorithm";
 import { scrapeBbcSports } from "~/helpers/scrapeBbcSports";
 import { appendScorers } from "~/helpers/scrapeBbcSports";
+import axios from "axios";
 
 import type { Category } from "~/helpers/scrapeBbcSports";
 type FootballMatch = Category["matches"][0] & {
@@ -231,6 +232,17 @@ function formulateTime(currentTab: string) {
   return newDate;
 }
 
+async function getApiData(currentTab: string) {
+  const link = "https://push.api.bbci.co.uk/batch?t=/data/bbc-morph-football-scores-match-list-data/endDate/2023-04-19/startDate/2023-04-19/todayDate/2023-04-19/tournament/full-priority-order/version/2.4.6/withPlayerActions/true?timeout=5";
+  const fetched = await axios.get(link);
+  const data = fetched.data as {
+    meta: string[];
+    payload: string[]
+  };
+
+  console.log(data);
+}
+
 export default function Football({ }: FootballProps) {
   const [currentTab, setCurrentTab] = useState("");
   // const countForToday = todaysData.reduce((acc, category) => acc + category.matches.length, 0);
@@ -240,15 +252,17 @@ export default function Football({ }: FootballProps) {
   const countForToday = footballCategoryData.reduce((acc, category) => acc + category.matches.length, 0);
 
   async function test() {
-    const siteToScrape = `https://www.bbc.com/sport/football/scores-fixtures/${currentTab}`;
-    const categories = await scrapeBbcSports(siteToScrape) as Category[];
-    console.log(categories);
-    const newCategories = await appendScorers(categories, currentTab) as unknown as Category[];
-    console.log(newCategories);
-    const processedData = await processAndApplyData(newCategories);
+    // const siteToScrape = `https://www.bbc.com/sport/football/scores-fixtures/${currentTab}`;
+    // const categories = await scrapeBbcSports(siteToScrape) as Category[];
+    // console.log(categories);
+    // const newCategories = await appendScorers(categories, currentTab) as unknown as Category[];
+    // console.log(newCategories);
+    // const processedData = await processAndApplyData(newCategories);
+    const test = await getApiData(currentTab);
+    console.log(test);
 
-    console.log(processedData);
-    setFootballCategoryData(processedData);
+    // console.log(processedData);
+    // setFootballCategoryData(processedData);
   }
 
   const isLoading = footballCategoryData.length === 0;

@@ -1,8 +1,5 @@
-// import fetch from "node-fetch";
 import { load } from "cheerio";
-// import { prisma } from "~/server/db";
 import axios from "axios";
-// let serverStart = false;
 
 export interface PlayerAction {
   addedTime: number;
@@ -67,6 +64,15 @@ export interface Category {
     homeScorers?: string[];
     awayScorers?: string[];
   }[];
+}
+
+function axiosWithCors(url: string) {
+  return axios.get(url, {
+    headers: {
+      "Access-Control-Allow-Origin": "*",
+      "Access-Control-Allow-Headers": "Origin, X-Requested-With, Content-Type, Accept",
+    },
+  });
 }
 
 export const getScorersForMatch = (matchName: string, mainDate: string) => {
@@ -180,28 +186,8 @@ export const appendScorers = async (categories: Category[], currentTab: string) 
   return Promise.all(newCategories);
 };
 
-// We can make a request to update the database, we don't want to do this too often though, probably every hour or so
-// async function databaseUpdate(categories: {heading: string; matches: {homeTeam: string; awayTeam: string; homeTeamScore: string; awayTeamScore: string; time: string; inProgress: boolean; aggScore?: string | null; cancelled?: boolean; group?: string; finalWinMessage?: string | null}[]}[], date: string) {
-//   // create a new category in the db with the heading and the matches
-//   // create a json that we can set 
-//   await prisma.footballMatchDay.upsert({
-//     where: {
-//       date: date,
-//     },
-//     // update it with the new fixture data
-//     update: {
-//       fixtureData: JSON.stringify(categories),
-//     },
-//     // create it if it doesn't exist with the stringified fixture data
-//     create: {
-//       date: date,
-//       fixtureData: JSON.stringify(categories),
-//     },
-//   });
-// }
-
 async function scrapeBbcWithCompleteLink(link: string) {
-  return axios.get(link)
+  return axiosWithCors(link)
     .then((res) => res.data as string)
     .then((body) => {
       console.log(body);
@@ -314,54 +300,6 @@ async function scrapeBbcWithCompleteLink(link: string) {
       return categories;
     });
 }
-
-// every 8 minutes
-// async function startPreviousDaysInterval() {
-//   // do the data for today
-//   const todaysDate = new Date().toISOString().split("T")[0] as string;
-//   const categories = await scrapeBbcWithCompleteLink(`https://www.bbc.co.uk/sport/football/scores-fixtures/${todaysDate}`);
-//   const newDataWithScorers = await appendScorers(categories, todaysDate);
-//   const toJson = JSON.stringify(newDataWithScorers);
-
-//   await prisma.todaysMatches.upsert({
-//     where: {
-//       date: todaysDate,
-//     },
-//     update: {
-//       fixtureData: toJson,
-//     },
-//     create: {
-//       date: todaysDate,
-//       fixtureData: toJson,
-//     },
-//   });
-
-//   setInterval(() => {
-//     console.log("Upserting database with previous data...");
-  
-//     // date in format YYYY-MM-DD
-//     const maxDays = 14;
-    
-//     // get previous like 2 days to keep in our big database (make sure to include today)
-//     const previousDates = Array.from({ length: maxDays }, (_, i) => {
-//       const date = new Date();
-//       date.setDate(date.getDate() - i);
-//       return date.toISOString().split("T")[0] as string;
-//     });
-  
-//     const dates = [...previousDates];
-  
-//     dates.forEach((date) => {
-//       scrapeBbcWithCompleteLink(
-//         `https://www.bbc.co.uk/sport/football/scores-fixtures/${date}`
-//       ).then((categories) => {
-//         // update the pool
-//         const update = databaseUpdate(categories, date);
-//         update.then(() => console.log("Database updated for date " + date)).catch(console.error);
-//       }).catch(console.error);
-//     });
-//   }, 1000 * 60 * 8);
-// }
 
 const scrapeBbcSports = async (link: string) => {
   const categories = await scrapeBbcWithCompleteLink(link);
