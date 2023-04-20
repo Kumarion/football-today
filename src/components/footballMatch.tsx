@@ -25,6 +25,7 @@ function getActualTime(time: string) {
 const STATUS = {
   "post-event": "Full time",
   "in-play": "Live",
+  "mid-event": "Live",
   "pre-event": "Not started",
 } as { [key: string]: string };
 
@@ -60,7 +61,7 @@ const FootballMatchComp = ({
       <div className="flex-row gap-3">
         {fullTime && (
           <h1 className="text-blue-400 text-xl text-center mb-4">
-              Not started
+              Full time
           </h1>
         )}
 
@@ -101,7 +102,8 @@ const FootballMatchComp = ({
           <div className="flex flex-row justify-center items-center gap-2 mb-10 h-full">
             <div>
               <span className="text-4xl font-bold">
-                {STATUS[status] === "Live" || STATUS[status] === "Full time" ? homeTeamScore : ""}
+                {STATUS[status] === "Full time" && homeTeamScore}
+                {STATUS[status] === "Live" && homeTeamScore}
               </span>
             </div>
 
@@ -113,7 +115,8 @@ const FootballMatchComp = ({
                 
             <div>
               <span className="text-4xl font-bold">
-                {STATUS[status] === "Live" || STATUS[status] === "Full time" ? awayTeamScore : ""}
+                {STATUS[status] === "Full time" && awayTeamScore}
+                {STATUS[status] === "Live" && awayTeamScore}
               </span>
             </div>
           </div>
@@ -166,19 +169,15 @@ const FootballMatchComp = ({
             </span>
           )}
 
-          {STATUS[status] && STATUS[status] !== "Not started" ? (
-            <span className="text-2xl normal-case text-green-400">
-              {STATUS[status]}
-            </span>
-          ) : (
+          {STATUS[status] && STATUS[status] === "Not started" ? (
             <span className="text-2xl normal-case text-green-400">
               {getActualTime(dateStarting)}
             </span>
-          )}
+          ) : null}
 
           {STATUS[status] === "Live" && (
-            <span className="text-2xl normal-case text-green-400">
-              {currentTime}
+            <span className="text-2xl normal-case text-red-400">
+              {currentTime + "'"} live
             </span>
           )}
         </span>
