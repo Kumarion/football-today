@@ -377,15 +377,23 @@ async function getApiData(currentTab: string) {
       event.homeTeam.playerActions && event.homeTeam.playerActions.length > 0 && event.homeTeam.playerActions.map((playerAction) => {
         if (playerAction.actions[0]?.type == "goal") {
           const fullName = playerAction.name.full;
-          const timeScored = playerAction.actions[0].displayTime;
-          homeScorers.set(fullName, [timeScored]);
+          playerAction.actions.map((action) => {
+            if (action.type == "goal") {
+              const timeScored = action.displayTime;
+              homeScorers.set(fullName, [...homeScorers.get(fullName) || [], timeScored]);
+            }
+          });
         }
       });
       event.awayTeam.playerActions && event.awayTeam.playerActions.length > 0 && event.awayTeam.playerActions.map((playerAction) => {
         if (playerAction.actions[0]?.type == "goal") {
           const fullName = playerAction.name.full;
-          const timeScored = playerAction.actions[0].displayTime;
-          awayScorers.set(fullName, [timeScored]);
+          playerAction.actions.map((action) => {
+            if (action.type == "goal") {
+              const timeScored = action.displayTime;
+              awayScorers.set(fullName, [...awayScorers.get(fullName) || [], timeScored]);
+            }
+          });
         }
       });
 

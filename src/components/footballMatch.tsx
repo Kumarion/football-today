@@ -22,6 +22,14 @@ function getActualTime(time: string) {
   return format(newTime, "h:mm a");
 }
 
+function getArrayDepth(value: [string, string[]][]): number {
+  let count = 0;
+  value.forEach((item) => {
+    count += item[1].length;
+  });
+  return count;
+}
+
 const STATUS = {
   "post-event": "Full time",
   "in-play": "Live",
@@ -53,8 +61,8 @@ const FootballMatchComp = ({
     status,
   } = data;
 
-  const newAwayTeamScore = awayScorers ? awayScorers.length : 0;
-  const newHomeTeamScore = homeScorers ? homeScorers.length : 0;
+  const newAwayTeamScore = awayScorers ? getArrayDepth(awayScorers) : 0;
+  const newHomeTeamScore = homeScorers ? getArrayDepth(homeScorers) : 0;
   
   return (
     <div
@@ -95,7 +103,8 @@ const FootballMatchComp = ({
                     key={scorer[0]} 
                     className="text-xs text-left break-words"
                   >
-                    {scorer[0]} <span className="text-green-400">{scorer[1]}</span>
+                    {/* Separate values with empty space */}
+                    {scorer[0]} <span className="text-green-400">{scorer[1].join(" ")}</span>
                   </li>
                 );
               })}
@@ -149,7 +158,8 @@ const FootballMatchComp = ({
                     key={scorer[0]}
                     className="text-xs text-right break-words"
                   >
-                    {scorer[0]} <span className="text-green-400">{scorer[1]}</span>
+                    {/* Separate values with empty space */}
+                    {scorer[0]} <span className="text-green-400">{scorer[1].join(" ")}</span>
                   </li>
                 );
               })}
