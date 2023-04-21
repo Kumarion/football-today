@@ -37,8 +37,8 @@ const FootballMatchComp = ({
   const {
     homeTeam,
     awayTeam,
-    homeTeamScore,
-    awayTeamScore,
+    // homeTeamScore,
+    // awayTeamScore,
     homeTeamLogo,
     awayTeamLogo,
     currentTime,
@@ -52,6 +52,9 @@ const FootballMatchComp = ({
     fullTime,
     status,
   } = data;
+
+  const newAwayTeamScore = awayScorers ? awayScorers.length : 0;
+  const newHomeTeamScore = homeScorers ? homeScorers.length : 0;
   
   return (
     <div
@@ -102,8 +105,8 @@ const FootballMatchComp = ({
           <div className="flex flex-row justify-center items-center gap-2 mb-10 h-full">
             <div>
               <span className="text-4xl font-bold">
-                {STATUS[status] === "Full time" && homeTeamScore}
-                {STATUS[status] === "Live" && homeTeamScore}
+                {STATUS[status] === "Full time" && newHomeTeamScore}
+                {STATUS[status] === "Live" && newHomeTeamScore}
               </span>
             </div>
 
@@ -115,8 +118,8 @@ const FootballMatchComp = ({
                 
             <div>
               <span className="text-4xl font-bold">
-                {STATUS[status] === "Full time" && awayTeamScore}
-                {STATUS[status] === "Live" && awayTeamScore}
+                {STATUS[status] === "Full time" && newAwayTeamScore}
+                {STATUS[status] === "Live" && newAwayTeamScore}
               </span>
             </div>
           </div>

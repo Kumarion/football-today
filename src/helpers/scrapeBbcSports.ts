@@ -193,7 +193,7 @@ async function scrapeBbcWithCompleteLink(link: string) {
   return axiosWithCors(link)
     .then((res) => res.data as string)
     .then((body) => {
-      console.log(body);
+      // console.log(body);
       const $ = load(body);
       const categories = [] as {
         heading: string;

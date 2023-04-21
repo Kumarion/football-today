@@ -435,7 +435,7 @@ export default function Football({ }: FootballProps) {
 
   async function processApi() {
     const test = await getApiData(currentTab);
-    console.log(test);
+    // console.log(test);
     setFootballCategoryData(test);
   }
 
